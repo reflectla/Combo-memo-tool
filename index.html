@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>格闘ゲーム用コンボメモ補助ツール</title>
+    <meta name="description" content="格闘ゲームのコンボをトークンベースで構造化して記録できるツール">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- サイドバー: コンボライブラリ -->
+        <aside class="sidebar" id="comboLibrarySidebar">
+            <div class="sidebar-header">
+                <h2>コンボメモ</h2>
+                <button id="toggleSidebarBtn" class="btn-icon" title="折りたたみ">
+                    <span>◀</span>
+                </button>
+            </div>
+
+            <div class="sidebar-content">
+                <div class="library-controls">
+                    <input type="text" id="comboSearchInput" class="search-input" placeholder="コンボを検索...">
+                    <div class="tag-filter-header" id="tagFilterToggleBar">
+                        <span class="tag-filter-title">🏷️ タグで絞り込む</span>
+                        <div class="tag-filter-header-actions">
+                            <button id="clearAllTagsBtn" class="btn-clear-tags" title="タグを全て外す" style="display: none;">✕ 全て外す</button>
+                            <span class="tag-filter-arrow" id="tagFilterArrow">▼</span>
+                        </div>
+                    </div>
+                    <div id="comboTagFilterContainer" class="tag-filter-container tag-filter-open">
+                        <span style="font-size: 0.8rem; color: var(--color-text-muted);">タグがありません</span>
+                    </div>
+                    <select id="comboSortSelect" class="sort-select">
+                        <option value="updatedAt">更新日時順</option>
+                        <option value="name">名前順</option>
+                        <option value="damage">ダメージ順</option>
+                        <option value="createdAt">作成日時順</option>
+                    </select>
+                </div>
+
+                <div class="library-export-controls" style="padding: 0 0.5rem 0.5rem; display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="checkbox" id="selectAllCombos" title="全て選択">
+                        <label for="selectAllCombos" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer;">全て選択</label>
+                    </div>
+                    <button id="exportSelectedCombosBtn" class="btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: var(--color-text-primary); cursor: pointer;">
+                        📄 テキスト出力
+                    </button>
+                </div>
+
+                <div id="comboLibraryList" class="combo-library-list">
+                    <!-- コンボリストがここに動的生成される -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- メインコンテンツ -->
+        <div class="main-wrapper">
+            <div class="container">
+                <header class="header">
+                    <div class="title-section">
+                        <h1 class="title">
+                            コンボメモツール
+                            <span id="currentFileNameDisplay" class="current-file-name-tag"></span>
+                            <span class="title-subtitle">Combo Notation Builder</span>
+                        </h1>
+                    </div>
+
+                    <div class="profile-section">
+                        <select id="profileSelect" class="profile-select">
+                            <option value="">キャラクターを選択...</option>
+                        </select>
+                        <button id="newProfileBtn" class="btn btn-primary">
+                            <span class="btn-icon">➕</span>
+                            新規キャラクター
+                        </button>
+                        <button id="editProfileBtn" class="btn btn-secondary">
+                            <span class="btn-icon">⚙️</span>
+                            編集
+                        </button>
+                        <button id="saveFileBtn" class="btn btn-secondary" title="現在開いているファイルに上書き保存">
+                            <span class="btn-icon">💾</span>
+                            上書き保存
+                        </button>
+                        <button id="saveAsFileBtn" class="btn btn-secondary" title="データを別名で保存">
+                            <span class="btn-icon">📝</span>
+                            別名で保存
+                        </button>
+                        <button id="openFileBtn" class="btn btn-secondary" title="データを開く">
+                            <span class="btn-icon">📂</span>
+                            開く
+                        </button>
+                        <button id="helpBtn" class="btn btn-secondary" title="使い方（ヘルプ）">
+                            <span class="btn-icon">❓</span>
+                        </button>
+                        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                    </div>
+                </header>
+
+                <main class="main-content">
+                    <!-- コンボ表示エリア -->
+                    <section class="combo-display-section">
+                        <div class="section-header">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <h2>現在のコンボ</h2>
+                                <input type="text" id="currentComboName" class="form-input" placeholder="コンボ名を入力..." style="background: rgba(255,255,255,0.05); font-size: 1.2rem; font-weight: bold; width: 300px; padding: 0.3rem 0.8rem; border-radius: var(--radius-sm);">
+                            </div>
+                            <div class="combo-actions">
+                                <button id="toggleEditModeBtn" class="btn btn-secondary">
+                                    <span class="btn-icon">✏️</span>
+                                    <span id="editModeLabel">テキストモード</span>
+                                </button>
+                                <button id="updateComboBtn" class="btn btn-primary" style="display: none; background: var(--gradient-tertiary);">
+                                    <span class="btn-icon">💾</span>
+                                    上書き保存
+                                </button>
+                                <button id="saveToLibraryBtn" class="btn btn-primary">
+                                    <span class="btn-icon">📚</span>
+                                    コンボメモに保存
+                                </button>
+                                <button id="clearComboBtn" class="btn btn-secondary">
+                                    <span class="btn-icon">🗑️</span>
+                                    クリア
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- コンボ情報入力エリア -->
+                        <div class="combo-info-inputs" style="display: flex; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">タグ（カンマ区切り）</label>
+                                <input type="text" id="currentComboTags" class="form-input" placeholder="例: 画面端, ゲージ使用" style="background: rgba(255,255,255,0.05);">
+                                <div id="existingTagsContainer" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.5rem; min-height: 20px;">
+                                    <!-- 既存のタグボタンがここに追加される -->
+                                </div>
+                            </div>
+                            <div style="flex: 0 0 100px;">
+                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">ダメージ</label>
+                                <input type="number" id="currentComboDamage" class="form-input" placeholder="0" style="background: rgba(255,255,255,0.05);">
+                            </div>
+                            <div style="flex: 2;">
+                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">備考</label>
+                                <input type="text" id="currentComboNotes" class="form-input" placeholder="備考やメモを入力..." style="background: rgba(255,255,255,0.05);">
+                            </div>
+                        </div>
+
+                        <!-- ビジュアルモード表示 -->
+                        <div id="visualModeDisplay" class="visual-mode">
+                            <div id="comboDisplay" class="combo-display">
+                                <div class="combo-empty-state">
+                                    <span class="empty-icon">✨</span>
+                                    <p>技を選択してコンボを作成してください</p>
+                                </div>
+                            </div>
+                            <div id="comboTokens" class="combo-tokens"></div>
+                        </div>
+
+                        <!-- テキストモード表示 -->
+                        <div id="textModeDisplay" class="text-mode" style="display: none;">
+                            <textarea id="comboTextArea" class="combo-textarea"
+                                placeholder="コンボをテキストで入力...&#10;例: 立ち弱P > 立ち中P xx 波動拳 (dl)"></textarea>
+                            <button id="applyTextBtn" class="btn btn-primary">
+                                <span class="btn-icon">✓</span>
+                                適用
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- 操作パネル -->
+                    <div class="panels-grid">
+                        <!-- 接続タイプパネル -->
+                        <section class="panel link-panel">
+                            <div class="panel-header">
+                                <h3>接続タイプ</h3>
+                                <span class="panel-subtitle">Link Type</span>
+                                <button id="addLinkTypeBtn" class="btn-icon-small" title="接続タイプを追加">
+                                    <span>➕</span>
+                                </button>
+                            </div>
+                            <div id="linkButtons" class="link-buttons">
+                                <!-- 動的生成 -->
+                            </div>
+                        </section>
+
+                        <!-- 修飾子パネル -->
+                        <section class="panel modifier-panel">
+                            <div class="panel-header">
+                                <h3>修飾子</h3>
+                                <span class="panel-subtitle">Modifiers</span>
+                                <button id="addModifierBtn" class="btn-icon-small" title="修飾子を追加">
+                                    <span>➕</span>
+                                </button>
+                            </div>
+                            <div id="modifierButtons" class="modifier-buttons">
+                                <!-- 動的生成 -->
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- 技選択パネル -->
+                    <section class="panel moves-panel">
+                        <div class="panel-header">
+                            <h3>技選択</h3>
+                            <span class="panel-subtitle">Move Selection</span>
+                        </div>
+                        <div class="move-categories">
+                            <!-- 通常技 -->
+                            <div class="move-category">
+                                <div class="category-header">
+                                    <h4 class="category-title">通常技</h4>
+                                    <button class="btn-icon-small add-move-btn" data-category="normal" title="技を追加">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
+                                <div id="normalMoves" class="move-buttons"></div>
+                            </div>
+                            <!-- 必殺技 -->
+                            <div class="move-category">
+                                <div class="category-header">
+                                    <h4 class="category-title">必殺技</h4>
+                                    <button class="btn-icon-small add-move-btn" data-category="special" title="技を追加">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
+                                <div id="specialMoves" class="move-buttons"></div>
+                            </div>
+                            <!-- 右カラム（超必殺技 & ジャンプ攻撃） -->
+                            <div class="move-column-group">
+                                <!-- 超必殺技 -->
+                                <div class="move-category">
+                                    <div class="category-header">
+                                        <h4 class="category-title">超必殺技</h4>
+                                        <button class="btn-icon-small add-move-btn" data-category="super" title="技を追加">
+                                            <span>➕</span>
+                                        </button>
+                                    </div>
+                                    <div id="superMoves" class="move-buttons"></div>
+                                </div>
+                                <!-- ジャンプ攻撃 -->
+                                <div class="move-category">
+                                    <div class="category-header">
+                                        <h4 class="category-title">ジャンプ攻撃</h4>
+                                        <button class="btn-icon-small add-move-btn" data-category="jump" title="技を追加">
+                                            <span>➕</span>
+                                        </button>
+                                    </div>
+                                    <div id="jumpMoves" class="move-buttons"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- モーダルオーバーレイ -->
+    <div id="modalOverlay" class="modal-overlay" style="display: none;">
+        <div id="modalContainer" class="modal-container">
+            <!-- モーダルコンテンツが動的に挿入される -->
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

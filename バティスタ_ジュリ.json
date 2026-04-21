@@ -1,0 +1,1021 @@
+{
+  "profiles": [
+    {
+      "id": "id_1769391603567_4ifm83p3z",
+      "gameName": "デフォルト",
+      "characterName": "汎用キャラクター",
+      "moves": [
+        {
+          "id": "5MK",
+          "displayName": "立ち中K",
+          "notation": "5MK",
+          "category": "normal"
+        },
+        {
+          "id": "5HK",
+          "displayName": "立ち強K",
+          "notation": "5HK",
+          "category": "normal"
+        },
+        {
+          "id": "2LP",
+          "displayName": "しゃがみ弱P",
+          "notation": "2LP",
+          "category": "normal"
+        },
+        {
+          "id": "2MP",
+          "displayName": "しゃがみ中P",
+          "notation": "2MP",
+          "category": "normal"
+        },
+        {
+          "id": "2HP",
+          "displayName": "しゃがみ強P",
+          "notation": "2HP",
+          "category": "normal"
+        },
+        {
+          "id": "2LK",
+          "displayName": "しゃがみ弱K",
+          "notation": "2LK",
+          "category": "normal"
+        },
+        {
+          "id": "2MK",
+          "displayName": "しゃがみ中K",
+          "notation": "2MK",
+          "category": "normal"
+        },
+        {
+          "id": "2HK",
+          "displayName": "しゃがみ強K",
+          "notation": "2HK",
+          "category": "normal"
+        },
+        {
+          "id": "623P",
+          "displayName": "昇龍拳",
+          "notation": "623P",
+          "category": "special"
+        },
+        {
+          "id": "214K",
+          "displayName": "竜巻旋風脚",
+          "notation": "214K",
+          "category": "special"
+        },
+        {
+          "id": "236K",
+          "displayName": "鎌払い",
+          "notation": "236K",
+          "category": "special"
+        },
+        {
+          "id": "236P",
+          "displayName": "波動拳",
+          "notation": "236P",
+          "category": "special"
+        },
+        {
+          "id": "236236P",
+          "displayName": "真空波動拳",
+          "notation": "236236P",
+          "category": "super"
+        },
+        {
+          "id": "236236K",
+          "displayName": "真空竜巻旋風脚",
+          "notation": "236236K",
+          "category": "super"
+        },
+        {
+          "id": "214214K",
+          "displayName": "滅殺豪昇龍",
+          "notation": "214214K",
+          "category": "super"
+        }
+      ],
+      "linkTypes": [
+        {
+          "id": "normal",
+          "symbol": ">",
+          "label": "通常接続"
+        },
+        {
+          "id": "cancel",
+          "symbol": "xx",
+          "label": "キャンセル"
+        }
+      ],
+      "modifiers": [
+        {
+          "id": "delay",
+          "symbol": "(dl)",
+          "label": "ディレイ"
+        }
+      ],
+      "combos": []
+    },
+    {
+      "id": "id_1769391637840_ccu29aits",
+      "gameName": "UNDERNIGHT Inbirth",
+      "characterName": "バティスタ",
+      "moves": [
+        {
+          "id": "2A",
+          "displayName": "2A",
+          "notation": "2A",
+          "category": "normal"
+        },
+        {
+          "id": "2B",
+          "displayName": "2B",
+          "notation": "2B",
+          "category": "normal"
+        },
+        {
+          "id": "2C",
+          "displayName": "2C",
+          "notation": "2C",
+          "category": "normal"
+        },
+        {
+          "id": "5A",
+          "displayName": "5A",
+          "notation": "5A",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392287248_i8gocl1ks",
+          "displayName": "5B",
+          "notation": "5B",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392328984_vyjeu0fmf",
+          "displayName": "5C",
+          "notation": "5C",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392342832_0akpc0zm5",
+          "displayName": "2BB",
+          "notation": "2BB",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392374576_0gne469sn",
+          "displayName": "2BBB",
+          "notation": "2BBB",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392384952_qhahlkuoe",
+          "displayName": "5BB",
+          "notation": "5BB",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392394752_edmf6kri3",
+          "displayName": "5CC",
+          "notation": "5CC",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769392410328_nx3vazh9t",
+          "displayName": "Aステラ",
+          "notation": "Aステラ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392440824_jr1bwgi6m",
+          "displayName": "Bステラ",
+          "notation": "Bステラ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392465320_1lxsw7v0p",
+          "displayName": "Aミコルセオ",
+          "notation": "Aミコ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392477880_wi9gqmoho",
+          "displayName": "Bミコルセオ",
+          "notation": "Bミコ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392504528_nkmsnr0v6",
+          "displayName": "Aサマー",
+          "notation": "Aサマー",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392513112_r9cjzhfkc",
+          "displayName": "Bサマー",
+          "notation": "Bサマー",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392530592_0i38v2bjp",
+          "displayName": "JAミコ",
+          "notation": "JAミコ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392542064_wseli0xen",
+          "displayName": "JBミコ",
+          "notation": "JBミコ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392554216_g3kzwao3x",
+          "displayName": "JAステラ",
+          "notation": "JAステラ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392579664_w1jd8i10g",
+          "displayName": "JBステラ",
+          "notation": "JBステラ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392590600_8k7djzl5v",
+          "displayName": "Aドリ",
+          "notation": "Aドリ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392599320_peutbhpvu",
+          "displayName": "Bドリル",
+          "notation": "Bドリ",
+          "category": "special"
+        },
+        {
+          "id": "id_1769392614584_kyp83f36y",
+          "displayName": "IW",
+          "notation": "IW",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392622392_fk00o8xvq",
+          "displayName": "IWE",
+          "notation": "IWE",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392635321_tnaqs29hs",
+          "displayName": "Cミコ",
+          "notation": "Cミコ",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392715352_7mtn2lb7x",
+          "displayName": "Cドリ",
+          "notation": "Cドリ",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392727192_r5krmb5u1",
+          "displayName": "Cサマー",
+          "notation": "Cサマー",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392745816_ivye0hefs",
+          "displayName": "Cステラ",
+          "notation": "Cステラ",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392776784_jrwyvcid2",
+          "displayName": "JCミコ",
+          "notation": "JCミコ",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392788112_imf4v8wqu",
+          "displayName": "JCステラ",
+          "notation": "JCステラ",
+          "category": "super"
+        },
+        {
+          "id": "id_1769392837008_r51w86w9c",
+          "displayName": "JA",
+          "notation": "JA",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769395433888_dtic18asf",
+          "displayName": "2設置",
+          "notation": "2設置",
+          "category": "special"
+        },
+        {
+          "id": "id_1769396196361_40njj6gjd",
+          "displayName": "アサルト",
+          "notation": "アサルト",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769396210176_ap08d7ip7",
+          "displayName": "FF",
+          "notation": "FF",
+          "category": "normal"
+        },
+        {
+          "id": "id_1769396633593_ca4841xe6",
+          "displayName": "5設置",
+          "notation": "5設置",
+          "category": "special"
+        },
+        {
+          "id": "id_1776677224084_ril6efoqt",
+          "displayName": "前歩き",
+          "notation": "前歩き",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776681862907_sd3k1jh7j",
+          "displayName": "設置",
+          "notation": "設置",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689837869_lsmdtguc5",
+          "displayName": "JA",
+          "notation": "JA",
+          "category": "jump"
+        },
+        {
+          "id": "id_1769392846672_wqrjsswyt",
+          "displayName": "JB",
+          "notation": "JB",
+          "category": "jump"
+        },
+        {
+          "id": "id_1769392853208_unquhnwoi",
+          "displayName": "JC",
+          "notation": "JC",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776681789563_270v1yi1v",
+          "displayName": "Jアサルト",
+          "notation": "Jアサルト",
+          "category": "jump"
+        },
+        {
+          "id": "id_1769396218553_hmuoqmh7z",
+          "displayName": "JFF",
+          "notation": "JFF",
+          "category": "jump"
+        },
+        {
+          "id": "id_1769396234720_swcfrvl5e",
+          "displayName": "浮遊",
+          "notation": "浮遊",
+          "category": "jump"
+        }
+      ],
+      "linkTypes": [
+        {
+          "id": "normal",
+          "symbol": ">",
+          "label": "通常接続"
+        },
+        {
+          "id": "cancel",
+          "symbol": "jc>",
+          "label": "ジャンプキャンセル"
+        }
+      ],
+      "modifiers": [
+        {
+          "id": "delay",
+          "symbol": "(dl)",
+          "label": "ディレイ"
+        },
+        {
+          "id": "id_1769392900264_19i36iq5i",
+          "symbol": "(AH)",
+          "label": "Aホールド"
+        },
+        {
+          "id": "id_1769392915168_h622duagn",
+          "symbol": "(BH)",
+          "label": "Bホールド"
+        },
+        {
+          "id": "id_1769392925352_5fzfro3gi",
+          "symbol": "(CH)",
+          "label": "Cホールド"
+        },
+        {
+          "id": "id_1776681878123_jgnqwtrmh",
+          "symbol": "〆",
+          "label": "〆"
+        }
+      ],
+      "combos": [
+        {
+          "id": "id_1769396997257_k1y0f3cq3",
+          "name": "A始動基本１",
+          "damage": 3153,
+          "tokens": [
+            {
+              "type": "move",
+              "id": "5A"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392328984_vyjeu0fmf"
+            },
+            {
+              "type": "link",
+              "kind": "cancel"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392846672_wqrjsswyt"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392915168_h622duagn"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392590600_8k7djzl5v"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392925352_5fzfro3gi"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769395433888_dtic18asf"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2A"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392900264_19i36iq5i"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2B"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769395433888_dtic18asf"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "delay"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392477880_wi9gqmoho"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392374576_0gne469sn"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1776681862907_sd3k1jh7j"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1776681878123_jgnqwtrmh"
+            }
+          ],
+          "displayString": "5A > 2C > 5C jc> JB (BH) > Aドリ > 2C (CH) > 2設置 > 2A (AH) > 2B > 2設置 > 2C (dl) > Bミコルセオ > 2BBB > 設置 〆",
+          "tags": [
+            "A始動"
+          ],
+          "notes": "",
+          "createdAt": "2026-01-26T03:09:57.257Z",
+          "updatedAt": "2026-04-20T13:35:00.586Z"
+        },
+        {
+          "id": "id_1776683417221_n7mgcgd9m",
+          "name": "5a始動応用1",
+          "damage": 3254,
+          "tokens": [
+            {
+              "type": "move",
+              "id": "5A"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392287248_i8gocl1ks"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392915168_h622duagn"
+            },
+            {
+              "type": "link",
+              "kind": "cancel"
+            },
+            {
+              "type": "modifier",
+              "kind": "delay"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392590600_8k7djzl5v"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392925352_5fzfro3gi"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769396633593_ca4841xe6"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2B"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392477880_wi9gqmoho"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769395433888_dtic18asf"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1776677224084_ril6efoqt"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "delay"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392465320_1lxsw7v0p"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392374576_0gne469sn"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1776681862907_sd3k1jh7j"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1776681878123_jgnqwtrmh"
+            }
+          ],
+          "displayString": "5A > 2C > 5B (BH) jc> (dl) > Aドリ > 2C (CH) > 5設置 > 2B > Bミコルセオ > 2設置 > 前歩き > 2C (dl) > Aミコルセオ > 2BBB > 設置 〆",
+          "tags": [
+            "A始動",
+            "中央"
+          ],
+          "notes": "",
+          "createdAt": "2026-04-20T11:10:17.222Z",
+          "updatedAt": "2026-04-20T11:48:29.433Z"
+        }
+      ]
+    },
+    {
+      "id": "id_1776686996026_5d76e7ser",
+      "gameName": "ストリートファイター6",
+      "characterName": "ジュリ",
+      "moves": [
+        {
+          "id": "5LP",
+          "displayName": "立ち弱P",
+          "notation": "5LP",
+          "category": "normal"
+        },
+        {
+          "id": "5MP",
+          "displayName": "立ち中P",
+          "notation": "5MP",
+          "category": "normal"
+        },
+        {
+          "id": "5HP",
+          "displayName": "立ち強P",
+          "notation": "5HP",
+          "category": "normal"
+        },
+        {
+          "id": "5LK",
+          "displayName": "立ち弱K",
+          "notation": "5LK",
+          "category": "normal"
+        },
+        {
+          "id": "5MK",
+          "displayName": "立ち中K",
+          "notation": "5MK",
+          "category": "normal"
+        },
+        {
+          "id": "5HK",
+          "displayName": "立ち強K",
+          "notation": "5HK",
+          "category": "normal"
+        },
+        {
+          "id": "2LP",
+          "displayName": "しゃがみ弱P",
+          "notation": "2LP",
+          "category": "normal"
+        },
+        {
+          "id": "2MP",
+          "displayName": "しゃがみ中P",
+          "notation": "2MP",
+          "category": "normal"
+        },
+        {
+          "id": "2HP",
+          "displayName": "しゃがみ強P",
+          "notation": "2HP",
+          "category": "normal"
+        },
+        {
+          "id": "2LK",
+          "displayName": "しゃがみ弱K",
+          "notation": "2LK",
+          "category": "normal"
+        },
+        {
+          "id": "2MK",
+          "displayName": "しゃがみ中K",
+          "notation": "2MK",
+          "category": "normal"
+        },
+        {
+          "id": "2HK",
+          "displayName": "しゃがみ強K",
+          "notation": "2HK",
+          "category": "normal"
+        },
+        {
+          "id": "236P",
+          "displayName": "弱風波",
+          "notation": "214SK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776687536691_pbmcx240o",
+          "displayName": "中風波",
+          "notation": "214MK",
+          "category": "special"
+        },
+        {
+          "id": "236236P",
+          "displayName": "SA1",
+          "notation": "236236K",
+          "category": "super"
+        },
+        {
+          "id": "214214K",
+          "displayName": "SA2",
+          "notation": "214214P",
+          "category": "super"
+        },
+        {
+          "id": "id_1776688248764_csh04wvdq",
+          "displayName": "ラッシュ",
+          "notation": "MM66",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688438420_o3ng9wjph",
+          "displayName": "前中P",
+          "notation": "6MP",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688489972_3pksmliap",
+          "displayName": "前中K",
+          "notation": "6MK",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688516756_tyiwkco00",
+          "displayName": "前大K",
+          "notation": "6HK",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688549388_s6opdqg0w",
+          "displayName": "引き大K",
+          "notation": "4HK",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688577357_66y8clod1",
+          "displayName": "タゲコン",
+          "notation": "タゲコン",
+          "category": "normal"
+        },
+        {
+          "id": "id_1776688613180_avg0ddl1i",
+          "displayName": "大風波",
+          "notation": "214LK",
+          "category": "special"
+        },
+        {
+          "id": "236K",
+          "displayName": "歳破衝",
+          "notation": "236LK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776688711676_wzsqzz9fa",
+          "displayName": "SA3",
+          "notation": "214214K",
+          "category": "super"
+        },
+        {
+          "id": "id_1776688781940_02glrwqpt",
+          "displayName": "暗剣殺",
+          "notation": "236MK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776688808980_e5b3erq15",
+          "displayName": "五黄殺",
+          "notation": "236HK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776688847356_zqdkuvdna",
+          "displayName": "ドライブインパクト",
+          "notation": "HH",
+          "category": "special"
+        },
+        {
+          "id": "id_1776688959060_ikdhegz41",
+          "displayName": "疾空閃",
+          "notation": "J214K",
+          "category": "special"
+        },
+        {
+          "id": "id_1776688984589_pdnr33jno",
+          "displayName": "死連閃",
+          "notation": "J214KK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689021884_2thq4r7lp",
+          "displayName": "弱天穿輪",
+          "notation": "623LP",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689037885_ohd39s3eb",
+          "displayName": "中天穿輪",
+          "notation": "623MP",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689053125_0g5f2ppa6",
+          "displayName": "強天穿輪",
+          "notation": "623HP",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689100396_jw8vba351",
+          "displayName": "OD天穿輪",
+          "notation": "623PP",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689111436_o65ii0qb6",
+          "displayName": "OD疾空閃",
+          "notation": "J214KK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689125837_3nw4lur11",
+          "displayName": "OD風波",
+          "notation": "214KK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689152389_zrg1t3zeo",
+          "displayName": "OD歳破衝",
+          "notation": "236LMK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689181597_bmoiwty9v",
+          "displayName": "OD暗剣殺",
+          "notation": "236LHK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689194349_9wr536d6q",
+          "displayName": "OD五黄殺",
+          "notation": "236MHK",
+          "category": "special"
+        },
+        {
+          "id": "id_1776689729726_dl7cc7n5v",
+          "displayName": "J大P",
+          "notation": "JLP",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690171894_stfd10nmb",
+          "displayName": "J大K",
+          "notation": "JLK",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690186126_20nwcla7e",
+          "displayName": "J中K",
+          "notation": "JMK",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690199494_aa603nr7d",
+          "displayName": "J中P",
+          "notation": "JMP",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690245582_yh0ars3b5",
+          "displayName": "J弱K",
+          "notation": "JLK",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690256270_iyfsrj67t",
+          "displayName": "J弱P",
+          "notation": "JLP",
+          "category": "jump"
+        },
+        {
+          "id": "id_1776690327774_f2v7p0knw",
+          "displayName": "垂J大K",
+          "notation": "5JLK",
+          "category": "jump"
+        }
+      ],
+      "linkTypes": [
+        {
+          "id": "normal",
+          "symbol": ">",
+          "label": "通常接続"
+        },
+        {
+          "id": "cancel",
+          "symbol": "xx",
+          "label": "キャンセル"
+        }
+      ],
+      "modifiers": [
+        {
+          "id": "delay",
+          "symbol": "(dl)",
+          "label": "ディレイ"
+        }
+      ],
+      "combos": []
+    }
+  ],
+  "version": "1.0",
+  "exportDate": "2026-04-20T13:35:03.260Z"
+}
