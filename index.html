@@ -114,6 +114,10 @@
                                 <input type="text" id="currentComboName" class="form-input" placeholder="コンボ名を入力..." style="background: rgba(255,255,255,0.05); font-size: 1.2rem; font-weight: bold; width: 300px; padding: 0.3rem 0.8rem; border-radius: var(--radius-sm);">
                             </div>
                             <div class="combo-actions">
+                                <button id="manualBtn" class="btn btn-secondary" title="便利な仕様・マニュアル">
+                                    <span class="btn-icon">📖</span>
+                                    <span>マニュアル</span>
+                                </button>
                                 <button id="toggleEditModeBtn" class="btn btn-secondary">
                                     <span class="btn-icon">✏️</span>
                                     <span id="editModeLabel">テキストモード</span>
@@ -124,7 +128,7 @@
                                 </button>
                                 <button id="saveToLibraryBtn" class="btn btn-primary">
                                     <span class="btn-icon">📚</span>
-                                    コンボメモに保存
+                                    別名で保存
                                 </button>
                                 <button id="clearComboBtn" class="btn btn-secondary">
                                     <span class="btn-icon">🗑️</span>
@@ -199,8 +203,25 @@
                                     <span>➕</span>
                                 </button>
                             </div>
-                            <div id="modifierButtons" class="modifier-buttons">
-                                <!-- 動的生成 -->
+                            <div class="modifier-groups">
+                                <div class="modifier-group">
+                                    <div class="modifier-group-toggle" id="prefixModifierToggleBar">
+                                        <span class="modifier-group-title">前置修飾子</span>
+                                        <span class="modifier-group-arrow" id="prefixModifierArrow">▼</span>
+                                    </div>
+                                    <div id="prefixModifierButtons" class="modifier-buttons modifier-group-content modifier-group-open">
+                                        <!-- 動的生成 -->
+                                    </div>
+                                </div>
+                                <div class="modifier-group">
+                                    <div class="modifier-group-toggle" id="suffixModifierToggleBar">
+                                        <span class="modifier-group-title">後置修飾子</span>
+                                        <span class="modifier-group-arrow" id="suffixModifierArrow">▼</span>
+                                    </div>
+                                    <div id="suffixModifierButtons" class="modifier-buttons modifier-group-content modifier-group-open">
+                                        <!-- 動的生成 -->
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     </div>

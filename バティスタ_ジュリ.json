@@ -185,85 +185,85 @@
         {
           "id": "id_1769392410328_nx3vazh9t",
           "displayName": "Aステラ",
-          "notation": "Aステラ",
+          "notation": "46A",
           "category": "special"
         },
         {
           "id": "id_1769392440824_jr1bwgi6m",
           "displayName": "Bステラ",
-          "notation": "Bステラ",
+          "notation": "46B",
           "category": "special"
         },
         {
           "id": "id_1769392465320_1lxsw7v0p",
-          "displayName": "Aミコルセオ",
-          "notation": "Aミコ",
+          "displayName": "Aミコ",
+          "notation": "64A",
           "category": "special"
         },
         {
           "id": "id_1769392477880_wi9gqmoho",
-          "displayName": "Bミコルセオ",
-          "notation": "Bミコ",
+          "displayName": "Bミコ",
+          "notation": "64B",
           "category": "special"
         },
         {
           "id": "id_1769392504528_nkmsnr0v6",
           "displayName": "Aサマー",
-          "notation": "Aサマー",
+          "notation": "28A",
           "category": "special"
         },
         {
           "id": "id_1769392513112_r9cjzhfkc",
           "displayName": "Bサマー",
-          "notation": "Bサマー",
+          "notation": "28B",
           "category": "special"
         },
         {
           "id": "id_1769392530592_0i38v2bjp",
           "displayName": "JAミコ",
-          "notation": "JAミコ",
+          "notation": "J64A",
           "category": "special"
         },
         {
           "id": "id_1769392542064_wseli0xen",
           "displayName": "JBミコ",
-          "notation": "JBミコ",
+          "notation": "J64B",
           "category": "special"
         },
         {
           "id": "id_1769392554216_g3kzwao3x",
           "displayName": "JAステラ",
-          "notation": "JAステラ",
+          "notation": "J46A",
           "category": "special"
         },
         {
           "id": "id_1769392579664_w1jd8i10g",
           "displayName": "JBステラ",
-          "notation": "JBステラ",
+          "notation": "J46B",
           "category": "special"
         },
         {
           "id": "id_1769392590600_8k7djzl5v",
           "displayName": "Aドリ",
-          "notation": "Aドリ",
+          "notation": "82A",
           "category": "special"
         },
         {
           "id": "id_1769392599320_peutbhpvu",
           "displayName": "Bドリル",
-          "notation": "Bドリ",
+          "notation": "82B",
           "category": "special"
         },
         {
           "id": "id_1769392614584_kyp83f36y",
           "displayName": "IW",
-          "notation": "IW",
+          "notation": "41236D",
           "category": "super"
         },
         {
           "id": "id_1769392622392_fk00o8xvq",
           "displayName": "IWE",
-          "notation": "IWE",
+          "notation": "ABCD",
           "category": "super"
         },
         {
@@ -281,25 +281,25 @@
         {
           "id": "id_1769392727192_r5krmb5u1",
           "displayName": "Cサマー",
-          "notation": "Cサマー",
+          "notation": "28C",
           "category": "super"
         },
         {
           "id": "id_1769392745816_ivye0hefs",
           "displayName": "Cステラ",
-          "notation": "Cステラ",
+          "notation": "46C",
           "category": "super"
         },
         {
           "id": "id_1769392776784_jrwyvcid2",
           "displayName": "JCミコ",
-          "notation": "JCミコ",
+          "notation": "J64C",
           "category": "super"
         },
         {
           "id": "id_1769392788112_imf4v8wqu",
           "displayName": "JCステラ",
-          "notation": "JCステラ",
+          "notation": "J46C",
           "category": "super"
         },
         {
@@ -311,13 +311,13 @@
         {
           "id": "id_1769395433888_dtic18asf",
           "displayName": "2設置",
-          "notation": "2設置",
+          "notation": "2set",
           "category": "special"
         },
         {
           "id": "id_1769396196361_40njj6gjd",
           "displayName": "アサルト",
-          "notation": "アサルト",
+          "notation": "6D",
           "category": "normal"
         },
         {
@@ -329,19 +329,19 @@
         {
           "id": "id_1769396633593_ca4841xe6",
           "displayName": "5設置",
-          "notation": "5設置",
+          "notation": "5set",
           "category": "special"
         },
         {
           "id": "id_1776677224084_ril6efoqt",
           "displayName": "前歩き",
-          "notation": "前歩き",
+          "notation": "6",
           "category": "normal"
         },
         {
           "id": "id_1776681862907_sd3k1jh7j",
           "displayName": "設置",
-          "notation": "設置",
+          "notation": "set",
           "category": "special"
         },
         {
@@ -365,7 +365,7 @@
         {
           "id": "id_1776681789563_270v1yi1v",
           "displayName": "Jアサルト",
-          "notation": "Jアサルト",
+          "notation": "j6d",
           "category": "jump"
         },
         {
@@ -377,8 +377,26 @@
         {
           "id": "id_1769396234720_swcfrvl5e",
           "displayName": "浮遊",
-          "notation": "浮遊",
+          "notation": "JAB",
           "category": "jump"
+        },
+        {
+          "id": "id_1777039870485_73gawc7sr",
+          "displayName": "CVO",
+          "notation": "ABC",
+          "category": "super"
+        },
+        {
+          "id": "id_1777039883093_pb32xd2l5",
+          "displayName": "VO",
+          "notation": "ABC",
+          "category": "super"
+        },
+        {
+          "id": "id_1777040104974_xu5a8axjh",
+          "displayName": "ステップ",
+          "notation": "6ab",
+          "category": "normal"
         }
       ],
       "linkTypes": [
@@ -397,27 +415,44 @@
         {
           "id": "delay",
           "symbol": "(dl)",
-          "label": "ディレイ"
+          "label": "ディレイ",
+          "position": "suffix"
         },
         {
           "id": "id_1769392900264_19i36iq5i",
           "symbol": "(AH)",
-          "label": "Aホールド"
+          "label": "Aホールド",
+          "position": "suffix"
         },
         {
           "id": "id_1769392915168_h622duagn",
           "symbol": "(BH)",
-          "label": "Bホールド"
+          "label": "Bホールド",
+          "position": "suffix"
         },
         {
           "id": "id_1769392925352_5fzfro3gi",
           "symbol": "(CH)",
-          "label": "Cホールド"
+          "label": "Cホールド",
+          "position": "suffix"
         },
         {
           "id": "id_1776681878123_jgnqwtrmh",
           "symbol": "〆",
-          "label": "〆"
+          "label": "end",
+          "position": "suffix"
+        },
+        {
+          "id": "id_1777038040428_9diwucjqb",
+          "symbol": "IC",
+          "label": "インクリース",
+          "position": "prefix"
+        },
+        {
+          "id": "id_1777038067008_nbq8ttskl",
+          "symbol": "上派生",
+          "label": "8IC",
+          "position": "prefix"
         }
       ],
       "combos": [
@@ -504,7 +539,7 @@
             },
             {
               "type": "move",
-              "id": "2B"
+              "id": "id_1769392287248_i8gocl1ks"
             },
             {
               "type": "link",
@@ -555,13 +590,15 @@
               "kind": "id_1776681878123_jgnqwtrmh"
             }
           ],
-          "displayString": "5A > 2C > 5C jc> JB (BH) > Aドリ > 2C (CH) > 2設置 > 2A (AH) > 2B > 2設置 > 2C (dl) > Bミコルセオ > 2BBB > 設置 〆",
+          "displayString": "5A > 2C > 5C jc> JB (BH) > Aドリ > 2C (CH) > 2設置 > 2A (AH) > 5B > 2設置 > 2C (dl) > Bミコルセオ > 2BBB > 設置 〆<span class=\"combo-cursor\"></span>",
           "tags": [
-            "A始動"
+            "A始動",
+            "中央",
+            "端"
           ],
-          "notes": "",
+          "notes": "A2回まで",
           "createdAt": "2026-01-26T03:09:57.257Z",
-          "updatedAt": "2026-04-20T13:35:00.586Z"
+          "updatedAt": "2026-04-21T01:57:49.354Z"
         },
         {
           "id": "id_1776683417221_n7mgcgd9m",
@@ -701,14 +738,151 @@
               "kind": "id_1776681878123_jgnqwtrmh"
             }
           ],
-          "displayString": "5A > 2C > 5B (BH) jc> (dl) > Aドリ > 2C (CH) > 5設置 > 2B > Bミコルセオ > 2設置 > 前歩き > 2C (dl) > Aミコルセオ > 2BBB > 設置 〆",
+          "displayString": "5A > 2C > 5B (BH) jc> (dl) > Aドリ > 2C (CH) > 5設置 > 2B > Bミコルセオ > 2設置 > 前歩き > 2C (dl) > Aミコルセオ > 2BBB > 設置 〆<span class=\"combo-cursor\"></span>",
           "tags": [
             "A始動",
-            "中央"
+            "中央",
+            "端"
+          ],
+          "notes": "A2回まで",
+          "createdAt": "2026-04-20T11:10:17.222Z",
+          "updatedAt": "2026-04-21T01:56:55.088Z"
+        },
+        {
+          "id": "id_1777040180760_lf8t4trh4",
+          "name": "2C始動基本",
+          "damage": 3600,
+          "tokens": [
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392328984_vyjeu0fmf"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392590600_8k7djzl5v"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392915168_h622duagn"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392925352_5fzfro3gi"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769396633593_ca4841xe6"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2B"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392477880_wi9gqmoho"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1777040104974_xu5a8axjh"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769395433888_dtic18asf"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "2C"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1769392925352_5fzfro3gi"
+            },
+            {
+              "type": "modifier",
+              "kind": "delay"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392465320_1lxsw7v0p"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1769392374576_0gne469sn"
+            },
+            {
+              "type": "link",
+              "kind": "normal"
+            },
+            {
+              "type": "move",
+              "id": "id_1776681862907_sd3k1jh7j"
+            },
+            {
+              "type": "modifier",
+              "kind": "id_1776681878123_jgnqwtrmh"
+            }
+          ],
+          "displayString": "2C > 5C > Aドリ (BH) > 2C (CH) > 5設置 > 2B > Bミコ > ステップ > 2設置 > 2C (CH) (dl) > Aミコ > 2BBB > 設置 〆",
+          "tags": [
+            "C始動",
+            "中央",
+            "端"
           ],
           "notes": "",
-          "createdAt": "2026-04-20T11:10:17.222Z",
-          "updatedAt": "2026-04-20T11:48:29.433Z"
+          "createdAt": "2026-04-24T14:16:20.760Z",
+          "updatedAt": "2026-04-24T14:16:20.760Z"
         }
       ]
     },
@@ -1017,5 +1191,5 @@
     }
   ],
   "version": "1.0",
-  "exportDate": "2026-04-20T13:35:03.260Z"
+  "exportDate": "2026-04-24T14:18:05.314Z"
 }

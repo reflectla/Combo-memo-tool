@@ -200,6 +200,10 @@ body::before {
     font-family: 'Inter', sans-serif;
 }
 
+.combo-empty-message {
+    color: rgba(255, 255, 255, 0.6);
+}
+
 .empty-icon {
     font-size: 3rem;
     opacity: 0.5;
@@ -289,6 +293,15 @@ body::before {
     font-weight: 800;
     box-shadow: 0 4px 12px rgba(159, 122, 234, 0.5);
     text-transform: uppercase;
+}
+
+/* 注釈 (Annotation - 1hit など) */
+.token.annotation {
+    background: rgba(107, 122, 153, 0.2);
+    border: 1px dashed var(--color-text-muted);
+    color: var(--color-text-secondary);
+    font-style: italic;
+    min-width: auto;
 }
 
 
@@ -498,6 +511,57 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-md);
+}
+
+.modifier-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.modifier-group-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    user-select: none;
+    transition: background var(--transition-fast);
+}
+
+.modifier-group-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modifier-group-title {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+.modifier-group-arrow {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.modifier-group-content {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.modifier-group-content.modifier-group-open {
+    max-height: 220px;
+    overflow-y: auto;
+    opacity: 1;
+    padding-top: 0.35rem;
+    padding-bottom: 0.1rem;
 }
 
 .modifier-btn {

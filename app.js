@@ -38,7 +38,7 @@ const defaultLinkTypes = [
 
 // デフォルトの修飾子
 const defaultModifiers = [
-    { id: "delay", symbol: "(dl)", label: "ディレイ" }
+    { id: "delay", symbol: "(dl)", label: "ディレイ", position: "suffix" }
 ];
 
 // ============================================
@@ -141,6 +141,7 @@ function setupEventListeners() {
 
     // コンボ操作
     document.getElementById('toggleEditModeBtn').addEventListener('click', toggleEditMode);
+    document.getElementById('manualBtn').addEventListener('click', showManualModal);
     document.getElementById('saveToLibraryBtn').addEventListener('click', () => {
         const name = document.getElementById('currentComboName').value.trim();
         const damage = document.getElementById('currentComboDamage').value.trim();
@@ -236,6 +237,8 @@ function setupEventListeners() {
 
     document.getElementById('addModifierBtn').addEventListener('click', () => showModifierModal('create'));
     document.getElementById('addLinkTypeBtn').addEventListener('click', () => showLinkModal('create'));
+    document.getElementById('prefixModifierToggleBar').addEventListener('click', () => toggleModifierGroup('prefix'));
+    document.getElementById('suffixModifierToggleBar').addEventListener('click', () => toggleModifierGroup('suffix'));
 
     // エクスポート/インポート/ヘルプ
     document.getElementById('helpBtn').addEventListener('click', showHelpModal);
@@ -327,6 +330,7 @@ function switchProfile(profileId) {
 
     currentProfileId = profileId;
     currentProfile = profile;
+    normalizeProfileData(currentProfile);
     localStorage.setItem('lastProfileId', profileId);
     comboTokens = [];
     loadedComboId = null;
@@ -437,13 +441,14 @@ function deleteMove(moveId) {
 // 修飾子・接続タイプ管理
 // ============================================
 
-function addModifierType(symbol, label) {
+function addModifierType(symbol, label, position = 'suffix') {
     if (!currentProfile) return;
 
     const modifier = {
         id: generateId(),
         symbol,
-        label
+        label,
+        position
     };
 
     currentProfile.modifiers.push(modifier);
@@ -452,7 +457,7 @@ function addModifierType(symbol, label) {
     showNotification('修飾子を追加しました', 'success');
 }
 
-function updateModifierType(id, symbol, label) {
+function updateModifierType(id, symbol, label, position) {
     if (!currentProfile) return;
 
     const modifier = currentProfile.modifiers.find(m => m.id === id);
@@ -460,6 +465,7 @@ function updateModifierType(id, symbol, label) {
 
     modifier.symbol = symbol;
     modifier.label = label;
+    modifier.position = position || modifier.position || 'suffix';
 
     saveProfiles();
     renderModifierButtons();
@@ -783,8 +789,11 @@ function reorderLinks(fromId, toId) {
 function renderModifierButtons() {
     if (!currentProfile) return;
 
-    const container = document.getElementById('modifierButtons');
-    container.innerHTML = currentProfile.modifiers.map(modifier => `
+    const prefixContainer = document.getElementById('prefixModifierButtons');
+    const suffixContainer = document.getElementById('suffixModifierButtons');
+    if (!prefixContainer || !suffixContainer) return;
+
+    const buildModifierHtml = (modifier) => `
         <div class="modifier-btn" data-modifier="${modifier.id}" role="button" tabindex="0">
             <div class="modifier-btn-content">
                 <span class="modifier-symbol">${modifier.symbol}</span>
@@ -795,7 +804,14 @@ function renderModifierButtons() {
                 <button class="btn-icon-small btn-danger delete-modifier-btn" data-modifier-id="${modifier.id}" title="削除">🗑️</button>
             </div>
         </div>
-    `).join('');
+    `;
+
+    const prefixModifiers = currentProfile.modifiers.filter(m => (m.position || 'suffix') === 'prefix');
+    const suffixModifiers = currentProfile.modifiers.filter(m => (m.position || 'suffix') === 'suffix');
+    const emptyHtml = '<span style="font-size: 0.8rem; color: var(--color-text-muted);">登録なし</span>';
+
+    prefixContainer.innerHTML = prefixModifiers.length > 0 ? prefixModifiers.map(buildModifierHtml).join('') : emptyHtml;
+    suffixContainer.innerHTML = suffixModifiers.length > 0 ? suffixModifiers.map(buildModifierHtml).join('') : emptyHtml;
 
     // イベントリスナー
     document.querySelectorAll('.modifier-btn').forEach(btn => {
@@ -888,6 +904,10 @@ function addMoveToken(moveId) {
 }
 
 function addModifierToken(modifierId) {
+    const modifier = currentProfile.modifiers.find(m => m.id === modifierId);
+    if (!modifier) return;
+    const modifierPosition = modifier.position || 'suffix';
+
     if (comboTokens.length === 0) {
         comboTokens.push({
             type: 'modifier',
@@ -896,6 +916,22 @@ function addModifierToken(modifierId) {
     } else {
         const lastToken = comboTokens[comboTokens.length - 1];
         if (lastToken.type !== 'move' && lastToken.type !== 'link' && lastToken.type !== 'modifier') return;
+
+        // 前置修飾子は「次の技側のブロック」に属するため、
+        // 直前が技/後置修飾子なら接続タイプを挟んでブロックを分ける
+        if (modifierPosition === 'prefix') {
+            const lastModifier = lastToken.type === 'modifier'
+                ? currentProfile.modifiers.find(m => m.id === lastToken.kind)
+                : null;
+            const lastModifierPosition = lastModifier ? (lastModifier.position || 'suffix') : null;
+            const shouldInsertLink = lastToken.type === 'move' || (lastToken.type === 'modifier' && lastModifierPosition === 'suffix');
+            if (shouldInsertLink) {
+                comboTokens.push({
+                    type: 'link',
+                    kind: currentLinkType
+                });
+            }
+        }
 
         comboTokens.push({
             type: 'modifier',
@@ -908,6 +944,10 @@ function addModifierToken(modifierId) {
 }
 
 function insertModifierAt(index, modifierId) {
+    const modifier = currentProfile.modifiers.find(m => m.id === modifierId);
+    if (!modifier) return index;
+    const modifierPosition = modifier.position || 'suffix';
+
     // 修飾子は move, link, または modifier の後にのみ挿入可能
     // ただし index が 0 の場合（先頭）は許可する
     if (index > 0) {
@@ -915,18 +955,37 @@ function insertModifierAt(index, modifierId) {
         if (prevToken.type !== 'move' && prevToken.type !== 'link' && prevToken.type !== 'modifier') return index;
     }
 
-    comboTokens.splice(index, 0, {
+    const tokensToInsert = [];
+    if (modifierPosition === 'prefix' && index > 0) {
+        const prevToken = comboTokens[index - 1];
+        const prevModifier = prevToken.type === 'modifier'
+            ? currentProfile.modifiers.find(m => m.id === prevToken.kind)
+            : null;
+        const prevModifierPosition = prevModifier ? (prevModifier.position || 'suffix') : null;
+        const shouldInsertLink = prevToken.type === 'move' || (prevToken.type === 'modifier' && prevModifierPosition === 'suffix');
+        if (shouldInsertLink) {
+            tokensToInsert.push({ type: 'link', kind: currentLinkType });
+        }
+    }
+
+    tokensToInsert.push({
         type: 'modifier',
         kind: modifierId
     });
 
-    insertPosition = index + 1;
+    comboTokens.splice(index, 0, ...tokensToInsert);
+
+    insertPosition = index + tokensToInsert.length;
     updateComboDisplay();
     autoSave();
     return insertPosition;
 }
 
 function insertLinkTypeAt(index, linkId) {
+    // 先頭が接続タイプだけになる状態を防ぐ（技が1つ以上ある時のみ挿入可能）
+    const hasMoveToken = comboTokens.some(token => token.type === 'move');
+    if (!hasMoveToken) return index;
+
     // 通常はMoveとMoveの間に入るものだが、手動挿入なのでユーザーの自由にさせる
     comboTokens.splice(index, 0, {
         type: 'link',
@@ -973,14 +1032,20 @@ function removeToken(index) {
     comboTokens.splice(index, 1);
 
     // リンクの整合性チェック
-    if (comboTokens.length > 0 && comboTokens[0].type === 'link') {
-        comboTokens.shift();
-    }
+    // link は「前後ともに move か modifier がある」場合のみ有効とする
+    comboTokens = comboTokens.filter((token, i, arr) => {
+        if (token.type !== 'link') return true;
+        const prev = arr[i - 1];
+        const next = arr[i + 1];
+        const validPrev = prev && (prev.type === 'move' || prev.type === 'modifier');
+        const validNext = next && (next.type === 'move' || next.type === 'modifier');
+        return validPrev && validNext;
+    });
 
-    for (let i = comboTokens.length - 1; i > 0; i--) {
-        if (comboTokens[i].type === 'link' && comboTokens[i - 1].type === 'link') {
-            comboTokens.splice(i, 1);
-        }
+    if (comboTokens.length === 0) {
+        insertPosition = null;
+    } else if (insertPosition !== null) {
+        insertPosition = Math.min(insertPosition, comboTokens.length);
     }
 
     updateComboDisplay();
@@ -1069,38 +1134,147 @@ function parseComboText(text) {
     if (!currentProfile) return [];
 
     const tokens = [];
-    const parts = text.split(/\s+/);
+    const entries = [];
+    const normalizeForParsing = (value) => {
+        if (typeof value !== 'string') return '';
+        // NFKC で全角英数字・記号揺れを吸収し、さらに大小文字差を吸収
+        return value.normalize('NFKC').toLowerCase().replace(/＞/g, '>');
+    };
 
-    for (const part of parts) {
-        if (!part) continue;
+    // 接続タイプ
+    currentProfile.linkTypes.forEach(linkType => {
+        if (!linkType.symbol) return;
+        entries.push({
+            kind: 'link',
+            value: linkType.symbol,
+            normalizedValue: normalizeForParsing(linkType.symbol),
+            token: { type: 'link', kind: linkType.id }
+        });
+    });
 
-        // 接続タイプをチェック
-        const linkType = currentProfile.linkTypes.find(l => l.symbol === part);
-        if (linkType) {
-            tokens.push({ type: 'link', kind: linkType.id });
+    // 修飾子
+    currentProfile.modifiers.forEach(modifier => {
+        if (!modifier.symbol) return;
+        entries.push({
+            kind: 'modifier',
+            value: modifier.symbol,
+            normalizedValue: normalizeForParsing(modifier.symbol),
+            token: { type: 'modifier', kind: modifier.id }
+        });
+    });
+
+    // 技（表示 / コマンド / ID）
+    currentProfile.moves.forEach(move => {
+        [move.displayName, move.notation, move.id].forEach(v => {
+            if (!v) return;
+            entries.push({
+                kind: 'move',
+                value: v,
+                normalizedValue: normalizeForParsing(v),
+                token: { type: 'move', id: move.id }
+            });
+        });
+    });
+
+    // 長い文字列を優先してマッチ（例: xx と x が共存する場合）
+    entries.sort((a, b) => b.value.length - a.value.length);
+
+    const normalizedText = normalizeForParsing(text);
+    let i = 0;
+    while (i < text.length) {
+        if (/\s/.test(text[i])) {
+            i++;
             continue;
         }
 
-        // 修飾子をチェック
-        const modifier = currentProfile.modifiers.find(m => m.symbol === part);
-        if (modifier) {
-            tokens.push({ type: 'modifier', kind: modifier.id });
+        let matched = null;
+
+        // 注釈 (数字+hit/ヒット または (数字 hit)) のパターンを優先
+        const annotationMatch = normalizedText.slice(i).match(/^(\d+)(hit|ヒット)|^\((\d+)\s*hit\)/);
+        if (annotationMatch) {
+            const val = annotationMatch[1] || annotationMatch[3];
+            tokens.push({ type: 'annotation', value: val });
+            i += annotationMatch[0].length;
             continue;
         }
 
-        // 技を検索（表示名または入力表記で）
-        const move = currentProfile.moves.find(m =>
-            m.displayName === part || m.notation === part || m.id === part
-        );
-
-        if (move) {
-            tokens.push({ type: 'move', id: move.id });
-        } else {
-            throw new Error(`不明な要素: ${part}`);
+        for (const entry of entries) {
+            if (normalizedText.startsWith(entry.normalizedValue, i)) {
+                matched = entry;
+                break;
+            }
         }
+
+        if (!matched) {
+            // 不明トークンは次の空白まで切り出してエラー表示
+            let j = i;
+            while (j < text.length && !/\s/.test(text[j])) j++;
+            throw new Error(`不明な要素: ${text.slice(i, j)}`);
+        }
+
+        tokens.push({ ...matched.token });
+        i += matched.value.length;
     }
 
-    return tokens;
+    const getModifierPosition = (token) => {
+        if (!token || token.type !== 'modifier') return null;
+        const modifier = currentProfile.modifiers.find(m => m.id === token.kind);
+        return modifier ? (modifier.position || 'suffix') : 'suffix';
+    };
+
+    const shouldInsertLinkBetween = (prev, current) => {
+        if (!prev || !current) return false;
+        if (prev.type === 'link' || current.type === 'link') return false;
+
+        // annotation が絡む場合
+        if (prev.type === 'annotation') {
+            if (current.type === 'move') return true;
+            if (current.type === 'modifier' && getModifierPosition(current) === 'prefix') return true;
+        }
+        if (current.type === 'annotation') return false;
+
+        const prevModifierPos = getModifierPosition(prev);
+        const currentModifierPos = getModifierPosition(current);
+
+        // move の直後
+        if (prev.type === 'move') {
+            if (current.type === 'move') return true;
+            if (current.type === 'modifier') {
+                // 後置は同ブロック、前置は次ブロック開始
+                return currentModifierPos === 'prefix';
+            }
+        }
+
+        // modifier の直後
+        if (prev.type === 'modifier') {
+            if (prevModifierPos === 'suffix') {
+                if (current.type === 'move') return true; // 後置の次の技は別ブロック
+                if (current.type === 'modifier') {
+                    return currentModifierPos === 'prefix'; // suffix->suffix は同ブロック
+                }
+            }
+
+            if (prevModifierPos === 'prefix') {
+                if (current.type === 'move') return false; // 前置の後ろ技は同ブロック
+                if (current.type === 'modifier') return currentModifierPos === 'suffix';
+                // prefix->prefix は同ブロック（まとめて後ろの技に掛ける）
+            }
+        }
+
+        return false;
+    };
+
+    // move/modifier の並びから、ブロック境界に現在選択中の接続タイプを自動補完
+    const autoLinkedTokens = [];
+    for (const token of tokens) {
+        const prev = autoLinkedTokens[autoLinkedTokens.length - 1];
+        if (shouldInsertLinkBetween(prev, token)) {
+            autoLinkedTokens.push({ type: 'link', kind: currentLinkType });
+        }
+        autoLinkedTokens.push(token);
+    }
+
+    return autoLinkedTokens;
 }
 
 // ============================================
@@ -1112,16 +1286,16 @@ function updateComboDisplay() {
     const tokensElement = document.getElementById('comboTokens');
 
     if (comboTokens.length === 0) {
+        insertPosition = null;
+        displayElement.classList.add('is-empty');
         displayElement.innerHTML = `
-            <div class="combo-empty-state">
-                <span class="empty-icon">✨</span>
-                <p>技を選択してコンボを作成してください</p>
-            </div>
+            <span class="combo-empty-message">技を選択してコンボを作成してください</span>
         `;
         tokensElement.innerHTML = '';
         return;
     }
 
+    displayElement.classList.remove('is-empty');
     const displayString = generateDisplayString(comboTokens, insertPosition);
     displayElement.innerHTML = displayString;
 
@@ -1207,12 +1381,13 @@ function handleTokenMove(fromIndex, toIndex) {
 function generateDisplayString(tokens, cursorIndex = null) {
     if (!currentProfile) return '';
 
-    const effectiveCursorIndex = (cursorIndex === null) ? tokens.length : cursorIndex;
+    const shouldShowCursor = cursorIndex !== null;
+    const effectiveCursorIndex = shouldShowCursor ? cursorIndex : -1;
     let html = '';
 
     for (let i = 0; i <= tokens.length; i++) {
-        // カーソル位置の挿入（テキストの間にゼロ幅で配置）
-        if (i === effectiveCursorIndex) {
+        // 挿入位置が指定されているときだけカーソル表示
+        if (shouldShowCursor && i === effectiveCursorIndex) {
             html += '<span class="combo-cursor"></span>';
         }
 
@@ -1232,6 +1407,9 @@ function generateDisplayString(tokens, cursorIndex = null) {
                 case 'modifier':
                     const modifier = currentProfile.modifiers.find(m => m.id === token.kind);
                     content = modifier ? modifier.symbol : token.kind;
+                    break;
+                case 'annotation':
+                    content = `(${token.value} hit)`;
                     break;
             }
             html += content;
@@ -1261,6 +1439,10 @@ function createTokenElement(token, index) {
             const modifier = currentProfile.modifiers.find(m => m.id === token.kind);
             content = modifier ? modifier.symbol : token.kind;
             break;
+        case 'annotation':
+            className += ' annotation';
+            content = `(${token.value} hit)`;
+            break;
     }
 
     return `
@@ -1280,6 +1462,12 @@ function saveComboToLibrary(name, damage, tags, notes) {
     if (!currentProfile) return;
     if (comboTokens.length === 0) {
         showNotification('コンボが空です', 'error');
+        return;
+    }
+
+    // 名前重複チェック
+    if (currentProfile.combos.some(c => c.name === name)) {
+        showNotification(`「${name}」という名前のコンボは既に存在します`, 'error');
         return;
     }
 
@@ -1618,7 +1806,7 @@ function showMoveModal(mode, moveId = null, category = 'normal') {
                 })()}
             </select>
             <small style="color: var(--color-text-muted); font-size: 0.78rem; margin-top: 4px; display: block;">
-                選択すると表示名・入力表記が自動入力されます。その後自由に編集してください。
+                選択すると表示・コマンドが自動入力されます。その後自由に編集してください。
             </small>
         </div>
         <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 0.5rem 0;">
@@ -1627,11 +1815,11 @@ function showMoveModal(mode, moveId = null, category = 'normal') {
     const bodyHTML = `
         ${copyFromHTML}
         <div class="form-group">
-            <label class="form-label">表示名</label>
+            <label class="form-label">表示</label>
             <input type="text" class="form-input" id="moveNameInput" value="${move ? move.displayName : ''}" placeholder="例: 立ち弱P">
         </div>
         <div class="form-group">
-            <label class="form-label">入力表記</label>
+            <label class="form-label">コマンド</label>
             <input type="text" class="form-input" id="moveNotationInput" value="${move ? move.notation : ''}" placeholder="例: 5LP">
         </div>
     `;
@@ -1688,11 +1876,19 @@ function showModifierModal(mode, modifierId = null) {
             <label class="form-label">ラベル</label>
             <input type="text" class="form-input" id="modifierLabelInput" value="${modifier ? modifier.label : ''}" placeholder="例: ジャンプキャンセル">
         </div>
+        <div class="form-group">
+            <label class="form-label">種類</label>
+            <select class="form-input" id="modifierPositionInput">
+                <option value="prefix" ${(modifier && (modifier.position || 'suffix') === 'prefix') ? 'selected' : ''}>前置修飾子</option>
+                <option value="suffix" ${(!modifier || (modifier.position || 'suffix') === 'suffix') ? 'selected' : ''}>後置修飾子</option>
+            </select>
+        </div>
     `;
 
     showModal(title, bodyHTML, () => {
         const symbol = document.getElementById('modifierSymbolInput').value.trim();
         const label = document.getElementById('modifierLabelInput').value.trim();
+        const position = document.getElementById('modifierPositionInput').value;
 
         if (!symbol || !label) {
             showNotification('すべての項目を入力してください', 'error');
@@ -1700,13 +1896,39 @@ function showModifierModal(mode, modifierId = null) {
         }
 
         if (mode === 'create') {
-            addModifierType(symbol, label);
+            addModifierType(symbol, label, position);
         } else {
-            updateModifierType(modifierId, symbol, label);
+            updateModifierType(modifierId, symbol, label, position);
         }
 
         return true;
     });
+}
+
+function toggleModifierGroup(position) {
+    const containerId = position === 'prefix' ? 'prefixModifierButtons' : 'suffixModifierButtons';
+    const arrowId = position === 'prefix' ? 'prefixModifierArrow' : 'suffixModifierArrow';
+    const container = document.getElementById(containerId);
+    const arrow = document.getElementById(arrowId);
+    if (!container || !arrow) return;
+
+    const isOpen = container.classList.contains('modifier-group-open');
+    if (isOpen) {
+        container.classList.remove('modifier-group-open');
+        arrow.textContent = '▶';
+    } else {
+        container.classList.add('modifier-group-open');
+        arrow.textContent = '▼';
+    }
+}
+
+function normalizeProfileData(profile) {
+    if (!profile) return;
+    if (!Array.isArray(profile.modifiers)) profile.modifiers = [];
+    profile.modifiers = profile.modifiers.map(mod => ({
+        ...mod,
+        position: mod.position === 'prefix' ? 'prefix' : 'suffix'
+    }));
 }
 
 function showLinkModal(mode, linkId = null) {
@@ -1772,7 +1994,7 @@ function showComboSaveModal() {
         </div>
     `;
 
-    showModal('コンボメモに保存', bodyHTML, () => {
+    showModal('別名で新規保存', bodyHTML, () => {
         const name = document.getElementById('comboNameInput').value.trim();
         const damage = document.getElementById('comboDamageInput').value.trim();
         const tags = document.getElementById('comboTagsInput').value.trim();
@@ -2090,6 +2312,36 @@ function showHelpModal() {
                 <li>「<strong>💾 上書き保存</strong>」で、現在開いている.jsonファイルに直接上書き保存します。</li>
                 <li>「<strong>📂 開く</strong>」で、パソコン上の.jsonファイルを読み込みます。</li>
                 <li>※「開く」または「別名で保存」したファイルは記憶され、次回ツールを開いた際に<strong>自動で読み込み</strong>を試みます（ブラウザの「許可」ダイアログが出た場合は許可してください）。</li>
+            </ul>
+        </div>
+    `;
+
+    showModal(title, bodyHTML);
+}
+
+function showManualModal() {
+    const title = '便利な仕様・マニュアル';
+    const bodyHTML = `
+        <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary);">
+            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">ヒット数注釈機能</h4>
+            <p style="margin-bottom: 0.8rem; font-size: 0.9rem;">
+                テキストモードやコンボ入力で「1hit」や「3ヒット」と入力すると、ビジュアルモードで <strong>(1 hit)</strong> のように注釈として表示されます。<br>
+                <span style="color: var(--color-text-muted);">※これは「技」として登録されないため、コンボの補足として自由に使えます。</span>
+            </p>
+
+            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">効率的な入力・編集</h4>
+            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem; font-size: 0.9rem;">
+                <li><strong>テキストモードの柔軟な解析</strong>: 技の「表示」と「コマンド」、接続や修飾子の「記号」と「ラベル」のどちらでも認識されます。また、全角・半角や大文字・小文字の差異も自動で判別して吸収します。</li>
+                <li><strong>自動接続機能</strong>: 技を「5LP 5MP」のようにスペースで並べて入力すると、現在選んでいる接続タイプ（ > など）を自動的に間に挿入して解析します。</li>
+                <li><strong>ドラッグ＆ドロップ</strong>: 技ボタンをドラッグして並べ替えたり、別のカテゴリ（必殺技から通常技など）へ移動できます。</li>
+                <li><strong>トークンの挿入</strong>: コンボ表示の下にある「+」ボタンをクリックすると、その位置に技や接続タイプを挿入できます。</li>
+            </ul>
+
+            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">便利なライブラリ機能</h4>
+            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 0; font-size: 0.9rem;">
+                <li><strong>一括コピー</strong>: 左サイドバーのコンボ横のチェックボックスを入れ、「📄 テキスト出力」を押すと、選択したコンボをまとめて整形してクリップボードにコピーします。</li>
+                <li><strong>既存タグの利用</strong>: タグ入力欄の下に表示される既存タグをクリックすると、素早くタグを追加できます。</li>
+                <li><strong>自動接続</strong>: 技を連続で選ぶと、現在選択されている「接続タイプ」が自動的に挿入されます。</li>
             </ul>
         </div>
     `;
