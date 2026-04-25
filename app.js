@@ -189,6 +189,26 @@ function setupEventListeners() {
     document.getElementById('comboSearchInput').addEventListener('input', (e) => {
         renderComboLibrary(e.target.value);
     });
+    // サイドバー折りたたみ
+    document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+        const sidebar = document.getElementById('comboLibrarySidebar');
+        const btn = document.getElementById('toggleSidebarBtn');
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        if (isCollapsed) {
+            sidebar.classList.remove('wide');
+        }
+        btn.querySelector('span').textContent = isCollapsed ? '▶' : '◀';
+        btn.title = isCollapsed ? '展開' : '折りたたみ';
+    });
+    // サイドバー拡大
+    document.getElementById('expandSidebarBtn').addEventListener('click', () => {
+        const sidebar = document.getElementById('comboLibrarySidebar');
+        const isWide = sidebar.classList.toggle('wide');
+        if (isWide) {
+            sidebar.classList.remove('collapsed');
+            document.getElementById('toggleSidebarBtn').querySelector('span').textContent = '◀';
+        }
+    });
     // タグフィルター開閉バー
     document.getElementById('tagFilterToggleBar').addEventListener('click', () => {
         const container = document.getElementById('comboTagFilterContainer');
@@ -954,7 +974,17 @@ function addMoveToken(moveId) {
     // 2つ目以降の技の場合、リンクを自動挿入
     if (comboTokens.length > 0) {
         const lastToken = comboTokens[comboTokens.length - 1];
-        if (lastToken.type === 'move' || lastToken.type === 'modifier') {
+        
+        // 直前が修飾子の場合、その位置を確認
+        let isPrefixModifier = false;
+        if (lastToken.type === 'modifier') {
+            const modifier = currentProfile.modifiers.find(m => m.id === lastToken.kind);
+            if (modifier && (modifier.position || 'suffix') === 'prefix') {
+                isPrefixModifier = true;
+            }
+        }
+
+        if ((lastToken.type === 'move' || lastToken.type === 'modifier') && !isPrefixModifier) {
             comboTokens.push({
                 type: 'link',
                 kind: currentLinkType
@@ -1075,7 +1105,17 @@ function insertMoveAt(index, moveId) {
 
     if (index > 0) {
         const prevToken = comboTokens[index - 1];
-        if (prevToken.type === 'move' || prevToken.type === 'modifier') {
+        
+        // 直前が修飾子の場合、その位置を確認
+        let isPrefixModifier = false;
+        if (prevToken.type === 'modifier') {
+            const modifier = currentProfile.modifiers.find(m => m.id === prevToken.kind);
+            if (modifier && (modifier.position || 'suffix') === 'prefix') {
+                isPrefixModifier = true;
+            }
+        }
+
+        if ((prevToken.type === 'move' || prevToken.type === 'modifier') && !isPrefixModifier) {
             tokensToInsert.push({ type: 'link', kind: currentLinkType });
         }
     }
@@ -1695,10 +1735,41 @@ function renderComboLibrary(searchQuery = '') {
             }
         }
 
+        // リソース表示用のHTML作成
+        let resourceHtml = '';
+        if (combo.resources && currentProfile.resourceDefinitions) {
+            const resEntries = currentProfile.resourceDefinitions
+                .map(def => {
+                    const data = combo.resources[def.id];
+                    if (!data || (data.consumed === 0 && data.gained === 0 && data.required === 0)) return '';
+                    
+                    let details = [];
+                    if (data.consumed !== 0) details.push(`<span style="color: var(--color-accent-primary)">-${data.consumed}</span>`);
+                    if (data.gained !== 0) details.push(`<span style="color: var(--color-success)">+${data.gained}</span>`);
+                    if (data.required !== 0) details.push(`<span style="color: var(--color-warning)">req:${data.required}</span>`);
+                    
+                    if (details.length === 0) return '';
+                    
+                    return `
+                        <div class="library-resource-badge" style="border-left-color: ${escapeHTML(def.color || '#00d4ff')}">
+                            <span style="font-weight: bold; opacity: 0.8;">${escapeHTML(def.name)}:</span>
+                            ${details.join(' ')}
+                        </div>
+                    `;
+                })
+                .filter(html => html !== '')
+                .join('');
+            
+            if (resEntries) {
+                resourceHtml = `<div class="combo-item-resources">${resEntries}</div>`;
+            }
+        }
+
         const safeId = escapeHTML(combo.id);
         const safeName = escapeHTML(combo.name);
         const safeDamage = escapeHTML(combo.damage);
         const safeDisplayString = escapeHTML(combo.displayString);
+        const safeNotes = combo.notes ? escapeHTML(combo.notes) : '';
 
         return `
         <div class="combo-item" data-combo-id="${safeId}">
@@ -1715,6 +1786,13 @@ function renderComboLibrary(searchQuery = '') {
                     ${combo.tags.map(tag => `<span class="combo-tag">${escapeHTML(tag)}</span>`).join('')}
                 </div>
             ` : ''}
+            
+            <!-- 拡大時に表示される詳細セクション -->
+            <div class="combo-item-details">
+                ${resourceHtml}
+                ${safeNotes ? `<div class="combo-item-notes">${safeNotes}</div>` : ''}
+            </div>
+
             <div class="combo-item-actions">
                 <button class="btn-icon-small load-combo-btn" data-combo-id="${safeId}" title="読み込み">📂</button>
                 <button class="btn-icon-small edit-combo-btn" data-combo-id="${safeId}" title="編集">✏️</button>

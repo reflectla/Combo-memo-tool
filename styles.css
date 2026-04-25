@@ -902,8 +902,72 @@ body::before {
     max-width: 60px;
 }
 
+.sidebar.wide {
+    width: 60vw;
+    max-width: 1000px;
+}
+
 .sidebar.collapsed .sidebar-content {
     display: none;
+}
+
+.sidebar.collapsed .sidebar-header h2 {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: var(--spacing-md) 0;
+}
+
+/* 拡大時のみ表示する詳細セクション */
+.combo-item-details {
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none; /* デフォルトは非表示 */
+}
+
+.sidebar.wide .combo-item-details {
+    display: block;
+}
+
+/* 拡大時のみコンボ表記を全文表示（折り返し許可） */
+.sidebar.wide .combo-item-string {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.combo-item-resources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 0.6rem;
+}
+
+.library-resource-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border-left: 3px solid var(--color-accent-secondary);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.combo-item-notes {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    line-height: 1.4;
 }
 
 .sidebar-header {
