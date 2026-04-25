@@ -271,13 +271,13 @@
         {
           "id": "id_1769392635321_tnaqs29hs",
           "displayName": "Cミコ",
-          "notation": "Cミコ",
+          "notation": "64C",
           "category": "super"
         },
         {
           "id": "id_1769392715352_7mtn2lb7x",
           "displayName": "Cドリ",
-          "notation": "Cドリ",
+          "notation": "82C",
           "category": "super"
         },
         {
@@ -3530,5 +3530,5 @@
     }
   ],
   "version": "1.1",
-  "exportDate": "2026-04-25T08:34:01.504Z"
+  "exportDate": "2026-04-25T12:09:35.875Z"
 }
