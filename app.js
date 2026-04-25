@@ -38,7 +38,7 @@ const defaultLinkTypes = [
 
 // デフォルトの修飾子
 const defaultModifiers = [
-    { id: "delay", symbol: "(dl)", label: "ディレイ", position: "suffix" }
+    { id: "delay", symbol: "(dl)", label: "delay", position: "suffix" }
 ];
 
 // ============================================
@@ -55,6 +55,25 @@ let currentFileHandle = null; // ファイル上書き用にハンドルを保�
 let insertPosition = null; // 挿入位置
 let loadedComboId = null; // 現在読み込んでいるコンボID
 let selectedFilterTags = new Set(); // タグフィルターの選択中タグ
+
+// ============================================
+// ヘルパー関数
+// ============================================
+
+/**
+ * HTML文字列をエスケープしてXSSを防止する
+ * @param {string} str 
+ * @returns {string}
+ */
+function escapeHTML(str) {
+    if (typeof str !== 'string') return str === null || str === undefined ? '' : String(str);
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 // ============================================
 // 初期化
@@ -111,9 +130,11 @@ function createDefaultProfile() {
         id: generateId(),
         gameName: "デフォルト",
         characterName: "汎用キャラクター",
+        iconUrl: "",
         moves: JSON.parse(JSON.stringify(defaultMoves)),
         linkTypes: JSON.parse(JSON.stringify(defaultLinkTypes)),
         modifiers: JSON.parse(JSON.stringify(defaultModifiers)),
+        resourceDefinitions: [],
         combos: []
     };
 
@@ -165,7 +186,6 @@ function setupEventListeners() {
     document.getElementById('applyTextBtn').addEventListener('click', applyTextMode);
 
     // サイドバー
-    document.getElementById('toggleSidebarBtn').addEventListener('click', toggleSidebar);
     document.getElementById('comboSearchInput').addEventListener('input', (e) => {
         renderComboLibrary(e.target.value);
     });
@@ -245,13 +265,14 @@ function setupEventListeners() {
     document.getElementById('saveFileBtn').addEventListener('click', saveFile);
     document.getElementById('saveAsFileBtn').addEventListener('click', saveAsFile);
     document.getElementById('openFileBtn').addEventListener('click', openFile);
+    document.getElementById('exportImageBtn').addEventListener('click', exportComboAsImage);
 }
 
 // ============================================
 // キャラクター（旧プロファイル）管理
 // ============================================
 
-function createProfile(gameName, characterName, baseProfileId = null) {
+function createProfile(gameName, characterName, baseProfileId = null, iconUrl = '') {
     let moves, linkTypes, modifiers;
     
     if (baseProfileId) {
@@ -275,9 +296,11 @@ function createProfile(gameName, characterName, baseProfileId = null) {
         id: generateId(),
         gameName,
         characterName,
+        iconUrl,
         moves,
         linkTypes,
         modifiers,
+        resourceDefinitions: [],
         combos: []
     };
 
@@ -294,12 +317,18 @@ function updateProfile(profileId, data) {
 
     profile.gameName = data.gameName;
     profile.characterName = data.characterName;
+    profile.iconUrl = data.iconUrl || '';
+    if (data.resourceDefinitions) {
+        profile.resourceDefinitions = data.resourceDefinitions;
+    }
 
     saveProfiles();
     renderProfileSelector();
 
     if (currentProfileId === profileId) {
         currentProfile = profile;
+        updateProfileIcon();
+        renderResourceInputs();
     }
 
     showNotification('キャラクターを更新しました', 'success');
@@ -324,23 +353,29 @@ function deleteProfile(profileId) {
     showNotification('キャラクターを削除しました', 'success');
 }
 
-function switchProfile(profileId) {
+function switchProfile(profileId, forceReset = true) {
     const profile = profiles.find(p => p.id === profileId);
     if (!profile) return;
 
+    const isSameProfile = (currentProfileId === profileId);
     currentProfileId = profileId;
     currentProfile = profile;
     normalizeProfileData(currentProfile);
     localStorage.setItem('lastProfileId', profileId);
-    comboTokens = [];
-    loadedComboId = null;
-    selectedFilterTags = new Set();
     
-    const nameInput = document.getElementById('currentComboName');
-    if (nameInput) {
-        nameInput.value = '';
-        document.getElementById('currentComboDamage').value = '';
-        document.getElementById('currentComboNotes').value = '';
+    if (forceReset && !isSameProfile) {
+        comboTokens = [];
+        loadedComboId = null;
+        selectedFilterTags = new Set();
+        
+        const nameInput = document.getElementById('currentComboName');
+        if (nameInput) {
+            nameInput.value = '';
+            document.getElementById('currentComboDamage').value = '';
+            document.getElementById('currentComboNotes').value = '';
+            const tagsInput = document.getElementById('currentComboTags');
+            if (tagsInput) tagsInput.value = '';
+        }
     }
 
     if (typeof updateComboBtnVisibility === 'function') updateComboBtnVisibility();
@@ -352,7 +387,23 @@ function switchProfile(profileId) {
     renderModifierButtons();
     renderComboLibrary();
     renderTagUI();
+    renderResourceInputs();
     updateComboDisplay();
+    updateProfileIcon();
+}
+
+function updateProfileIcon() {
+    const container = document.getElementById('currentProfileIconContainer');
+    if (!container) return;
+
+    if (currentProfile && currentProfile.iconUrl) {
+        // アイコンURLはエスケープして属性に入れる
+        const safeUrl = escapeHTML(currentProfile.iconUrl);
+        const safeName = escapeHTML(currentProfile.characterName);
+        container.innerHTML = `<img src="${safeUrl}" alt="${safeName}">`;
+    } else {
+        container.innerHTML = '<span class="empty-icon-placeholder">👤</span>';
+    }
 }
 
 function renderProfileSelector() {
@@ -691,16 +742,21 @@ function reorderMoves(fromId, toId, toCat) {
 
 
 function createMoveButton(move) {
+    const safeId = escapeHTML(move.id);
+    const safeCategory = escapeHTML(move.category);
+    const safeDisplayName = escapeHTML(move.displayName);
+    const safeNotation = escapeHTML(move.notation);
+
     return `
-        <div class="move-btn" data-move-id="${move.id}" data-category="${move.category}" draggable="true" role="button" tabindex="0">
+        <div class="move-btn" data-move-id="${safeId}" data-category="${safeCategory}" draggable="true" role="button" tabindex="0">
             <div class="move-btn-content">
-                <span class="move-name">${move.displayName}</span>
-                <span class="move-notation">${move.notation}</span>
+                <span class="move-name">${safeDisplayName}</span>
+                <span class="move-notation">${safeNotation}</span>
             </div>
             <div class="move-btn-actions">
-                <button class="btn-icon-small edit-move-btn" data-move-id="${move.id}" title="編集">✏️</button>
-                <button class="btn-icon-small clone-move-btn" data-move-id="${move.id}" title="コピーして新規作成">📄</button>
-                <button class="btn-icon-small btn-danger delete-move-btn" data-move-id="${move.id}" title="削除">🗑️</button>
+                <button class="btn-icon-small edit-move-btn" data-move-id="${safeId}" title="編集">✏️</button>
+                <button class="btn-icon-small clone-move-btn" data-move-id="${safeId}" title="コピーして新規作成">📄</button>
+                <button class="btn-icon-small btn-danger delete-move-btn" data-move-id="${safeId}" title="削除">🗑️</button>
             </div>
         </div>
     `;
@@ -710,18 +766,25 @@ function renderLinkButtons() {
     if (!currentProfile) return;
 
     const container = document.getElementById('linkButtons');
-    container.innerHTML = currentProfile.linkTypes.map(linkType => `
-        <div class="link-btn ${currentLinkType === linkType.id ? 'active' : ''}" data-link="${linkType.id}" role="button" tabindex="0">
-            <div class="link-btn-content">
-                <span class="link-symbol">${linkType.symbol}</span>
-                <span class="link-label" style="font-size: 0.8rem;">${linkType.label}</span>
+    container.innerHTML = currentProfile.linkTypes.map(linkType => {
+        const safeId = escapeHTML(linkType.id);
+        const safeSymbol = escapeHTML(linkType.symbol);
+        const safeLabel = escapeHTML(linkType.label);
+        const isActive = currentLinkType === linkType.id ? 'active' : '';
+
+        return `
+            <div class="link-btn ${isActive}" data-link="${safeId}" role="button" tabindex="0">
+                <div class="link-btn-content">
+                    <span class="link-symbol">${safeSymbol}</span>
+                    <span class="link-label" style="font-size: 0.8rem;">${safeLabel}</span>
+                </div>
+                <div class="move-btn-actions">
+                    <button class="btn-icon-small edit-link-btn" data-link-id="${safeId}" title="編集">✏️</button>
+                    <button class="btn-icon-small btn-danger delete-link-btn" data-link-id="${safeId}" title="削除">🗑️</button>
+                </div>
             </div>
-            <div class="move-btn-actions">
-                <button class="btn-icon-small edit-link-btn" data-link-id="${linkType.id}" title="編集">✏️</button>
-                <button class="btn-icon-small btn-danger delete-link-btn" data-link-id="${linkType.id}" title="削除">🗑️</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     // イベントリスナー
     document.querySelectorAll('.link-btn').forEach(btn => {
@@ -793,18 +856,23 @@ function renderModifierButtons() {
     const suffixContainer = document.getElementById('suffixModifierButtons');
     if (!prefixContainer || !suffixContainer) return;
 
-    const buildModifierHtml = (modifier) => `
-        <div class="modifier-btn" data-modifier="${modifier.id}" role="button" tabindex="0">
-            <div class="modifier-btn-content">
-                <span class="modifier-symbol">${modifier.symbol}</span>
-                <span class="modifier-label" style="font-size: 0.8rem;">${modifier.label}</span>
+    const buildModifierHtml = (modifier) => {
+        const safeId = escapeHTML(modifier.id);
+        const safeSymbol = escapeHTML(modifier.symbol);
+        const safeLabel = escapeHTML(modifier.label);
+        return `
+            <div class="modifier-btn" data-modifier="${safeId}" role="button" tabindex="0">
+                <div class="modifier-btn-content">
+                    <span class="modifier-symbol">${safeSymbol}</span>
+                    <span class="modifier-label" style="font-size: 0.8rem;">${safeLabel}</span>
+                </div>
+                <div class="move-btn-actions">
+                    <button class="btn-icon-small edit-modifier-btn" data-modifier-id="${safeId}" title="編集">✏️</button>
+                    <button class="btn-icon-small btn-danger delete-modifier-btn" data-modifier-id="${safeId}" title="削除">🗑️</button>
+                </div>
             </div>
-            <div class="move-btn-actions">
-                <button class="btn-icon-small edit-modifier-btn" data-modifier-id="${modifier.id}" title="編集">✏️</button>
-                <button class="btn-icon-small btn-danger delete-modifier-btn" data-modifier-id="${modifier.id}" title="削除">🗑️</button>
-            </div>
-        </div>
-    `;
+        `;
+    };
 
     const prefixModifiers = currentProfile.modifiers.filter(m => (m.position || 'suffix') === 'prefix');
     const suffixModifiers = currentProfile.modifiers.filter(m => (m.position || 'suffix') === 'suffix');
@@ -1097,8 +1165,8 @@ function toggleEditMode() {
         textMode.style.display = 'flex';
         label.textContent = 'ビジュアルモード';
 
-        // 現在のコンボをテキストエリアに設定
-        const displayString = generateDisplayString(comboTokens);
+        // 現在のコンボをテキストエリアに設定 (プレーンテキスト)
+        const displayString = generateDisplayString(comboTokens, null, false);
         document.getElementById('comboTextArea').value = displayString;
     } else {
         visualMode.style.display = 'block';
@@ -1152,14 +1220,16 @@ function parseComboText(text) {
         });
     });
 
-    // 修飾子
+    // 修飾子 (表記 / ID)
     currentProfile.modifiers.forEach(modifier => {
-        if (!modifier.symbol) return;
-        entries.push({
-            kind: 'modifier',
-            value: modifier.symbol,
-            normalizedValue: normalizeForParsing(modifier.symbol),
-            token: { type: 'modifier', kind: modifier.id }
+        [modifier.symbol, modifier.label].forEach(v => {
+            if (!v) return;
+            entries.push({
+                kind: 'modifier',
+                value: v,
+                normalizedValue: normalizeForParsing(v),
+                token: { type: 'modifier', kind: modifier.id }
+            });
         });
     });
 
@@ -1296,7 +1366,7 @@ function updateComboDisplay() {
     }
 
     displayElement.classList.remove('is-empty');
-    const displayString = generateDisplayString(comboTokens, insertPosition);
+    const displayString = generateDisplayString(comboTokens, insertPosition, true);
     displayElement.innerHTML = displayString;
 
     let tokensHtml = comboTokens.map((token, index) => {
@@ -1378,21 +1448,21 @@ function handleTokenMove(fromIndex, toIndex) {
 }
 
 
-function generateDisplayString(tokens, cursorIndex = null) {
+function generateDisplayString(tokens, cursorIndex = null, asHTML = false) {
     if (!currentProfile) return '';
 
-    const shouldShowCursor = cursorIndex !== null;
+    const shouldShowCursor = asHTML && cursorIndex !== null;
     const effectiveCursorIndex = shouldShowCursor ? cursorIndex : -1;
-    let html = '';
+    let result = '';
 
     for (let i = 0; i <= tokens.length; i++) {
         // 挿入位置が指定されているときだけカーソル表示
         if (shouldShowCursor && i === effectiveCursorIndex) {
-            html += '<span class="combo-cursor"></span>';
+            result += '<span class="combo-cursor"></span>';
         }
 
         if (i < tokens.length) {
-            if (i > 0) html += ' ';
+            if (i > 0) result += ' ';
             const token = tokens[i];
             let content = '';
             switch (token.type) {
@@ -1412,11 +1482,11 @@ function generateDisplayString(tokens, cursorIndex = null) {
                     content = `(${token.value} hit)`;
                     break;
             }
-            html += content;
+            result += asHTML ? escapeHTML(content) : content;
         }
     }
 
-    return html;
+    return result;
 }
 
 function createTokenElement(token, index) {
@@ -1448,7 +1518,7 @@ function createTokenElement(token, index) {
     return `
         <button class="token-insert" data-index="${index}" title="ここに挿入">+</button>
         <div class="${className}" draggable="true" data-index="${index}">
-            <span>${content}</span>
+            <span>${escapeHTML(content)}</span>
             <button class="token-remove" data-index="${index}">×</button>
         </div>
     `;
@@ -1476,9 +1546,10 @@ function saveComboToLibrary(name, damage, tags, notes) {
         name,
         damage: parseInt(damage) || 0,
         tokens: JSON.parse(JSON.stringify(comboTokens)),
-        displayString: generateDisplayString(comboTokens),
+        displayString: generateDisplayString(comboTokens, null, false),
         tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
         notes: notes || '',
+        resources: getResourceDataFromUI(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -1487,6 +1558,7 @@ function saveComboToLibrary(name, damage, tags, notes) {
     saveProfiles();
     renderComboLibrary();
     renderTagUI();
+    renderResourceInputs();
     loadedComboId = combo.id;
     if (typeof updateComboBtnVisibility === 'function') updateComboBtnVisibility();
     showNotification('コンボをコンボメモに保存しました', 'success');
@@ -1508,6 +1580,26 @@ function loadComboFromLibrary(comboId) {
         document.getElementById('currentComboNotes').value = combo.notes || '';
         const tagsInput = document.getElementById('currentComboTags');
         if (tagsInput) tagsInput.value = combo.tags ? combo.tags.join(', ') : '';
+        
+        // リソースデータの復元
+        if (currentProfile.resourceDefinitions) {
+            currentProfile.resourceDefinitions.forEach(def => {
+                const consumedInput = document.getElementById(`res_${def.id}_consumed`);
+                const gainedInput = document.getElementById(`res_${def.id}_gained`);
+                const requiredInput = document.getElementById(`res_${def.id}_required`);
+                
+                if (consumedInput) consumedInput.value = '';
+                if (gainedInput) gainedInput.value = '';
+                if (requiredInput) requiredInput.value = '';
+
+                if (combo.resources && combo.resources[def.id]) {
+                    const data = combo.resources[def.id];
+                    if (consumedInput) consumedInput.value = data.consumed || '';
+                    if (gainedInput) gainedInput.value = data.gained || '';
+                    if (requiredInput) requiredInput.value = data.required || '';
+                }
+            });
+        }
     }
 
     if (typeof updateComboBtnVisibility === 'function') updateComboBtnVisibility();
@@ -1552,7 +1644,7 @@ function renderComboLibrary(searchQuery = '') {
 
     let combos = [...currentProfile.combos];
 
-    // タグフィルター（複数選択→AND瘟いではなかOR条件）
+    // タグフィルター
     if (selectedFilterTags.size > 0) {
         combos = combos.filter(combo =>
             combo.tags && Array.from(selectedFilterTags).every(ft => combo.tags.includes(ft))
@@ -1603,25 +1695,30 @@ function renderComboLibrary(searchQuery = '') {
             }
         }
 
+        const safeId = escapeHTML(combo.id);
+        const safeName = escapeHTML(combo.name);
+        const safeDamage = escapeHTML(combo.damage);
+        const safeDisplayString = escapeHTML(combo.displayString);
+
         return `
-        <div class="combo-item" data-combo-id="${combo.id}">
+        <div class="combo-item" data-combo-id="${safeId}">
             <div class="combo-item-header">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" class="combo-select-cb" data-combo-id="${combo.id}" style="cursor: pointer;" onclick="event.stopPropagation()">
-                    <span class="combo-item-name">${combo.name}</span>
+                    <input type="checkbox" class="combo-select-cb" data-combo-id="${safeId}" style="cursor: pointer;" onclick="event.stopPropagation()">
+                    <span class="combo-item-name">${safeName}</span>
                 </div>
-                <span class="combo-item-damage">${combo.damage}</span>
+                <span class="combo-item-damage">${safeDamage}</span>
             </div>
-            <div class="combo-item-string">${combo.displayString}</div>
+            <div class="combo-item-string">${safeDisplayString}</div>
             ${combo.tags.length > 0 ? `
                 <div class="combo-item-tags">
-                    ${combo.tags.map(tag => `<span class="combo-tag">${tag}</span>`).join('')}
+                    ${combo.tags.map(tag => `<span class="combo-tag">${escapeHTML(tag)}</span>`).join('')}
                 </div>
             ` : ''}
             <div class="combo-item-actions">
-                <button class="btn-icon-small load-combo-btn" data-combo-id="${combo.id}" title="読み込み">📂</button>
-                <button class="btn-icon-small edit-combo-btn" data-combo-id="${combo.id}" title="編集">✏️</button>
-                <button class="btn-icon-small btn-danger delete-combo-btn" data-combo-id="${combo.id}" title="削除">🗑️</button>
+                <button class="btn-icon-small load-combo-btn" data-combo-id="${safeId}" title="読み込み">📂</button>
+                <button class="btn-icon-small edit-combo-btn" data-combo-id="${safeId}" title="編集">✏️</button>
+                <button class="btn-icon-small btn-danger delete-combo-btn" data-combo-id="${safeId}" title="削除">🗑️</button>
                 <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-left: 0.5rem; align-self: center;">${dateStr}</span>
             </div>
         </div>
@@ -1666,6 +1763,62 @@ function toggleSidebar() {
 }
 
 // ============================================
+// リソース（ゲージ）管理
+// ============================================
+
+function renderResourceInputs() {
+    const container = document.getElementById('comboResourceInputs');
+    if (!container || !currentProfile) return;
+
+    const defs = currentProfile.resourceDefinitions || [];
+    if (defs.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex';
+    container.innerHTML = defs.map(def => {
+        const safeId = escapeHTML(def.id);
+        const safeName = escapeHTML(def.name);
+        const safeColor = escapeHTML(def.color || 'var(--color-accent-secondary)');
+        return `
+            <div class="resource-input-group" style="padding: 0.5rem; border-left: 3px solid ${safeColor}; background: rgba(0,0,0,0.2); border-radius: 4px;">
+                <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.4rem; color: ${safeColor};">${safeName}</div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="field">
+                        <span style="font-size: 0.7rem; color: var(--color-text-muted);">消費</span>
+                        <input type="number" id="res_${safeId}_consumed" class="form-input" style="width: 60px; padding: 2px 5px; font-size: 0.85rem;" placeholder="未設定">
+                    </div>
+                    ${def.showGain ? `
+                    <div class="field">
+                        <span style="font-size: 0.7rem; color: var(--color-text-muted);">獲得</span>
+                        <input type="number" id="res_${safeId}_gained" class="form-input" style="width: 60px; padding: 2px 5px; font-size: 0.85rem;" placeholder="未設定">
+                    </div>` : ''}
+                    ${def.showRequired ? `
+                    <div class="field">
+                        <span style="font-size: 0.7rem; color: var(--color-text-muted);">必要</span>
+                        <input type="number" id="res_${safeId}_required" class="form-input" style="width: 60px; padding: 2px 5px; font-size: 0.85rem;" placeholder="未設定">
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getResourceDataFromUI() {
+    if (!currentProfile) return {};
+    const data = {};
+    (currentProfile.resourceDefinitions || []).forEach(def => {
+        data[def.id] = {
+            consumed: parseFloat(document.getElementById(`res_${def.id}_consumed`)?.value) || 0,
+            gained: parseFloat(document.getElementById(`res_${def.id}_gained`)?.value) || 0,
+            required: parseFloat(document.getElementById(`res_${def.id}_required`)?.value) || 0
+        };
+    });
+    return data;
+}
+
+// ============================================
 // モーダル
 // ============================================
 
@@ -1675,7 +1828,7 @@ function showModal(title, bodyHTML, onConfirm) {
 
     container.innerHTML = `
         <div class="modal-header">
-            <h3 class="modal-title">${title}</h3>
+            <h3 class="modal-title">${escapeHTML(title)}</h3>
             <button class="modal-close" id="modalCloseBtn">×</button>
         </div>
         <div class="modal-body">
@@ -1721,18 +1874,46 @@ function showProfileModal(mode, profileId = null) {
     const bodyHTML = `
         <div class="form-group">
             <label class="form-label">ゲーム名</label>
-            <input type="text" class="form-input" id="gameNameInput" value="${profile ? profile.gameName : ''}" placeholder="例: ストリートファイター6">
+            <input type="text" class="form-input" id="gameNameInput" value="${profile ? escapeHTML(profile.gameName) : ''}" placeholder="例: ストリートファイター6">
         </div>
         <div class="form-group">
             <label class="form-label">キャラクター名</label>
-            <input type="text" class="form-input" id="characterNameInput" value="${profile ? profile.characterName : ''}" placeholder="例: リュウ">
+            <input type="text" class="form-input" id="characterNameInput" value="${profile ? escapeHTML(profile.characterName) : ''}" placeholder="例: リュウ">
         </div>
+        <div class="form-group">
+            <label class="form-label">キャラクターアイコン (任意)</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                <input type="text" class="form-input" id="profileIconInput" value="${profile ? escapeHTML(profile.iconUrl || '') : ''}" placeholder="URLまたはアップロード..." style="flex: 1;">
+                <label class="btn btn-secondary" style="margin: 0; cursor: pointer; white-space: nowrap;">
+                    📁 アップロード
+                    <input type="file" id="iconFileInput" accept="image/*" style="display: none;">
+                </label>
+            </div>
+            <div id="iconPreview" class="profile-modal-icon-preview">
+                ${profile && profile.iconUrl ? `<img src="${escapeHTML(profile.iconUrl)}" alt="Preview">` : '<span class="empty-icon-placeholder">No Icon</span>'}
+            </div>
+            <div style="margin-top: 10px; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                <p style="margin-bottom: 4px;">※URL指定の場合、元サイトの制限（CORS）により、画像保存時にアイコンが表示されないことがあります。その場合はアップロードをご利用ください。</p>
+                <p>※アップロード目安: 1MB以内の正方形に近い画像（自動リサイズされます）</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">リソース（ゲージ）定義</label>
+            <div id="resourceDefinitionsList" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <!-- リソースリスト -->
+            </div>
+            <button type="button" class="btn btn-secondary" id="addNewResourceBtn" style="width: 100%; font-size: 0.85rem;">
+                ➕ 新しいゲージを追加
+            </button>
+        </div>
+
         ${mode === 'create' ? `
             <div class="form-group">
                 <label class="form-label">引き継ぐキャラクター (任意)</label>
                 <select class="form-input" id="inheritProfileSelect">
                     <option value="">完全新規（デフォルト技のみ）</option>
-                    ${profiles.map(p => `<option value="${p.id}">${p.gameName} - ${p.characterName}</option>`).join('')}
+                    ${profiles.map(p => `<option value="${escapeHTML(p.id)}">${escapeHTML(p.gameName)} - ${escapeHTML(p.characterName)}</option>`).join('')}
                 </select>
                 <small style="color: var(--color-text-muted); font-size: 0.8rem; display: block; margin-top: 4px;">※接続タイプ、修飾子、技名を引き継ぎます（コンボは引き継ぎません）</small>
             </div>
@@ -1747,80 +1928,160 @@ function showProfileModal(mode, profileId = null) {
     showModal(title, bodyHTML, () => {
         const gameName = document.getElementById('gameNameInput').value.trim();
         const characterName = document.getElementById('characterNameInput').value.trim();
-        let baseProfileId = null;
-        if (mode === 'create') {
-            baseProfileId = document.getElementById('inheritProfileSelect').value;
-        }
+        const iconUrl = document.getElementById('profileIconInput').value.trim();
 
         if (!gameName || !characterName) {
             showNotification('ゲーム名とキャラクター名を入力してください', 'error');
             return false;
         }
 
+        const data = {
+            gameName,
+            characterName,
+            iconUrl,
+            resourceDefinitions: localResourceDefs
+        };
+
         if (mode === 'create') {
-            createProfile(gameName, characterName, baseProfileId);
+            const inheritId = document.getElementById('inheritProfileSelect').value || null;
+            createProfile(gameName, characterName, inheritId, iconUrl);
+            const newProfile = profiles[profiles.length - 1];
+            newProfile.resourceDefinitions = localResourceDefs;
+            saveProfiles();
+            switchProfile(newProfile.id);
         } else {
-            updateProfile(profileId, { gameName, characterName });
+            updateProfile(profileId, data);
         }
 
         return true;
     });
 
+    // プレビューのリアルタイム更新
+    const updatePreview = (url) => {
+        const preview = document.getElementById('iconPreview');
+        if (url) {
+            const safeUrl = escapeHTML(url);
+            preview.innerHTML = `<img src="${safeUrl}" alt="Preview" onerror="this.parentElement.innerHTML='<span class=\'empty-icon-placeholder\'>Invalid URL</span>'">`;
+        } else {
+            preview.innerHTML = '<span class="empty-icon-placeholder">No Icon</span>';
+        }
+    };
+
+    const iconInput = document.getElementById('profileIconInput');
+    if (iconInput) iconInput.addEventListener('input', (e) => updatePreview(e.target.value.trim()));
+
+    const fileInput = document.getElementById('iconFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 1024 * 1024) {
+                    showNotification('画像サイズは1MB以下にしてください', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    document.getElementById('profileIconInput').value = base64;
+                    updatePreview(base64);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
     if (mode === 'edit') {
-        document.getElementById('deleteProfileBtn').addEventListener('click', () => {
+        const delBtn = document.getElementById('deleteProfileBtn');
+        if (delBtn) delBtn.addEventListener('click', () => {
             deleteProfile(profileId);
             closeModal();
         });
     }
+
+    // リソース定義の管理
+    let localResourceDefs = profile ? JSON.parse(JSON.stringify(profile.resourceDefinitions || [])) : [];
+
+    const renderLocalResources = () => {
+        const list = document.getElementById('resourceDefinitionsList');
+        if (!list) return;
+        if (localResourceDefs.length === 0) {
+            list.innerHTML = '<span style="font-size: 0.85rem; color: var(--color-text-muted);">定義されたゲージはありません</span>';
+            return;
+        }
+        list.innerHTML = localResourceDefs.map((res, idx) => {
+            const safeName = escapeHTML(res.name);
+            const safeColor = escapeHTML(res.color);
+            return `
+                <div style="background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px; border-left: 4px solid ${safeColor}; margin-bottom: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                        <input type="text" class="form-input res-name" data-idx="${idx}" value="${safeName}" placeholder="ゲージ名" style="flex: 2;">
+                        <input type="color" class="res-color" data-idx="${idx}" value="${safeColor}" style="width: 40px; height: 40px; padding: 0; border: none; background: none; cursor: pointer;">
+                        <button type="button" class="btn btn-danger btn-icon-small delete-res-btn" data-idx="${idx}">🗑️</button>
+                    </div>
+                    <div style="display: flex; gap: 1rem; font-size: 0.8rem;">
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" class="res-show-gain" data-idx="${idx}" ${res.showGain ? 'checked' : ''}> 獲得量も表示
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" class="res-show-required" data-idx="${idx}" ${res.showRequired ? 'checked' : ''}> 必要量も表示
+                        </label>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        list.querySelectorAll('.res-name').forEach(input => {
+            input.addEventListener('input', (e) => localResourceDefs[e.target.dataset.idx].name = e.target.value);
+        });
+        list.querySelectorAll('.res-color').forEach(input => {
+            input.addEventListener('input', (e) => {
+                localResourceDefs[e.target.dataset.idx].color = e.target.value;
+                e.target.closest('div').parentElement.style.borderLeftColor = e.target.value;
+            });
+        });
+        list.querySelectorAll('.res-show-gain').forEach(input => {
+            input.addEventListener('change', (e) => localResourceDefs[e.target.dataset.idx].showGain = e.target.checked);
+        });
+        list.querySelectorAll('.res-show-required').forEach(input => {
+            input.addEventListener('change', (e) => localResourceDefs[e.target.dataset.idx].showRequired = e.target.checked);
+        });
+        list.querySelectorAll('.delete-res-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                localResourceDefs.splice(e.currentTarget.dataset.idx, 1);
+                renderLocalResources();
+            });
+        });
+    };
+
+    const addResBtn = document.getElementById('addNewResourceBtn');
+    if (addResBtn) {
+        addResBtn.addEventListener('click', () => {
+            localResourceDefs.push({
+                id: generateId(),
+                name: '新ゲージ',
+                color: '#00d4ff',
+                showGain: false,
+                showRequired: false
+            });
+            renderLocalResources();
+        });
+    }
+
+    renderLocalResources();
 }
 
 function showMoveModal(mode, moveId = null, category = 'normal') {
     const move = moveId ? currentProfile.moves.find(m => m.id === moveId) : null;
     const title = mode === 'create' ? '技を追加' : '技を編集';
 
-    // 新規追加時のみ「既存の技をコピー」セクションを表示
-    const copyFromHTML = mode === 'create' ? `
-        <div class="form-group">
-            <label class="form-label" style="color: var(--color-accent-secondary);">📋 既存の技をベースにする（任意）</label>
-            <select class="form-input" id="moveCopySelect" style="font-size: 0.85rem;">
-                <option value="">— 空白から新規作成 —</option>
-                ${(() => {
-                    // カテゴリの優先順位を決定
-                    const priority = {
-                        'normal': ['normal', 'jump', 'special', 'super'],
-                        'jump': ['jump', 'normal', 'special', 'super'],
-                        'special': ['special', 'super', 'normal', 'jump'],
-                        'super': ['super', 'special', 'normal', 'jump']
-                    };
-                    const order = priority[category] || ['normal', 'jump', 'special', 'super'];
-                    
-                    // 並び替えてからマッピング
-                    return [...currentProfile.moves].sort((a, b) => {
-                        const indexA = order.indexOf(a.category);
-                        const indexB = order.indexOf(b.category);
-                        if (indexA !== indexB) return indexA - indexB;
-                        return 0; // 同一カテゴリ内は元の順序を維持
-                    }).map(m =>
-                        `<option value="${m.id}" data-name="${m.displayName}" data-notation="${m.notation}">${m.displayName}（${m.notation}）</option>`
-                    ).join('');
-                })()}
-            </select>
-            <small style="color: var(--color-text-muted); font-size: 0.78rem; margin-top: 4px; display: block;">
-                選択すると表示・コマンドが自動入力されます。その後自由に編集してください。
-            </small>
-        </div>
-        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 0.5rem 0;">
-    ` : '';
-
     const bodyHTML = `
-        ${copyFromHTML}
         <div class="form-group">
             <label class="form-label">表示</label>
-            <input type="text" class="form-input" id="moveNameInput" value="${move ? move.displayName : ''}" placeholder="例: 立ち弱P">
+            <input type="text" class="form-input" id="moveNameInput" value="${move ? escapeHTML(move.displayName) : ''}" placeholder="例: 立ち弱P">
         </div>
         <div class="form-group">
             <label class="form-label">コマンド</label>
-            <input type="text" class="form-input" id="moveNotationInput" value="${move ? move.notation : ''}" placeholder="例: 5LP">
+            <input type="text" class="form-input" id="moveNotationInput" value="${move ? escapeHTML(move.notation) : ''}" placeholder="例: 5LP">
         </div>
     `;
 
@@ -1842,25 +2103,6 @@ function showMoveModal(mode, moveId = null, category = 'normal') {
 
         return true;
     });
-
-    // 新規追加時：コピー元セレクトの変更で各フィールドを自動入力
-    if (mode === 'create') {
-        const copySelect = document.getElementById('moveCopySelect');
-        if (copySelect) {
-            copySelect.addEventListener('change', () => {
-                const selected = copySelect.options[copySelect.selectedIndex];
-                if (selected.value) {
-                    document.getElementById('moveNameInput').value = selected.dataset.name || '';
-                    document.getElementById('moveNotationInput').value = selected.dataset.notation || '';
-                    document.getElementById('moveNameInput').focus();
-                    document.getElementById('moveNameInput').select();
-                } else {
-                    document.getElementById('moveNameInput').value = '';
-                    document.getElementById('moveNotationInput').value = '';
-                }
-            });
-        }
-    }
 }
 
 function showModifierModal(mode, modifierId = null) {
@@ -1869,12 +2111,12 @@ function showModifierModal(mode, modifierId = null) {
 
     const bodyHTML = `
         <div class="form-group">
-            <label class="form-label">記号</label>
-            <input type="text" class="form-input" id="modifierSymbolInput" value="${modifier ? modifier.symbol : ''}" placeholder="例: (jc)">
+            <label class="form-label">表記</label>
+            <input type="text" class="form-input" id="modifierSymbolInput" value="${modifier ? escapeHTML(modifier.symbol) : ''}" placeholder="例: (jc)">
         </div>
         <div class="form-group">
-            <label class="form-label">ラベル</label>
-            <input type="text" class="form-input" id="modifierLabelInput" value="${modifier ? modifier.label : ''}" placeholder="例: ジャンプキャンセル">
+            <label class="form-label">ID</label>
+            <input type="text" class="form-input" id="modifierLabelInput" value="${modifier ? escapeHTML(modifier.label) : ''}" placeholder="例: jc">
         </div>
         <div class="form-group">
             <label class="form-label">種類</label>
@@ -1929,6 +2171,7 @@ function normalizeProfileData(profile) {
         ...mod,
         position: mod.position === 'prefix' ? 'prefix' : 'suffix'
     }));
+    if (!Array.isArray(profile.resourceDefinitions)) profile.resourceDefinitions = [];
 }
 
 function showLinkModal(mode, linkId = null) {
@@ -1938,11 +2181,11 @@ function showLinkModal(mode, linkId = null) {
     const bodyHTML = `
         <div class="form-group">
             <label class="form-label">記号</label>
-            <input type="text" class="form-input" id="linkSymbolInput" value="${linkType ? linkType.symbol : ''}" placeholder="例: ~">
+            <input type="text" class="form-input" id="linkSymbolInput" value="${linkType ? escapeHTML(linkType.symbol) : ''}" placeholder="例: ~">
         </div>
         <div class="form-group">
             <label class="form-label">ラベル</label>
-            <input type="text" class="form-input" id="linkLabelInput" value="${linkType ? linkType.label : ''}" placeholder="例: ホールド">
+            <input type="text" class="form-input" id="linkLabelInput" value="${linkType ? escapeHTML(linkType.label) : ''}" placeholder="例: ホールド">
         </div>
     `;
 
@@ -1978,11 +2221,11 @@ function showComboSaveModal() {
     const bodyHTML = `
         <div class="form-group">
             <label class="form-label">コンボ名</label>
-            <input type="text" class="form-input" id="comboNameInput" placeholder="例: 基本コンボ1" value="${currentName}">
+            <input type="text" class="form-input" id="comboNameInput" placeholder="例: 基本コンボ1" value="${escapeHTML(currentName)}">
         </div>
         <div class="form-group">
             <label class="form-label">ダメージ</label>
-            <input type="number" class="form-input" id="comboDamageInput" placeholder="例: 250" value="${currentDamage}">
+            <input type="number" class="form-input" id="comboDamageInput" placeholder="例: 250" value="${escapeHTML(currentDamage)}">
         </div>
         <div class="form-group">
             <label class="form-label">タグ（カンマ区切り）</label>
@@ -1990,7 +2233,7 @@ function showComboSaveModal() {
         </div>
         <div class="form-group">
             <label class="form-label">メモ</label>
-            <textarea class="form-textarea" id="comboNotesInput" placeholder="コンボの説明やメモ">${currentNotes}</textarea>
+            <textarea class="form-textarea" id="comboNotesInput" placeholder="コンボの説明やメモ">${escapeHTML(currentNotes)}</textarea>
         </div>
     `;
 
@@ -2025,19 +2268,19 @@ function showComboEditModal(comboId) {
     const bodyHTML = `
         <div class="form-group">
             <label class="form-label">コンボ名</label>
-            <input type="text" class="form-input" id="comboNameInput" value="${combo.name}">
+            <input type="text" class="form-input" id="comboNameInput" value="${escapeHTML(combo.name)}">
         </div>
         <div class="form-group">
             <label class="form-label">ダメージ</label>
-            <input type="number" class="form-input" id="comboDamageInput" value="${combo.damage}">
+            <input type="number" class="form-input" id="comboDamageInput" value="${escapeHTML(combo.damage)}">
         </div>
         <div class="form-group">
             <label class="form-label">タグ（カンマ区切り）</label>
-            <input type="text" class="form-input" id="comboTagsInput" value="${combo.tags.join(', ')}">
+            <input type="text" class="form-input" id="comboTagsInput" value="${escapeHTML(combo.tags.join(', '))}">
         </div>
         <div class="form-group">
             <label class="form-label">メモ</label>
-            <textarea class="form-textarea" id="comboNotesInput">${combo.notes}</textarea>
+            <textarea class="form-textarea" id="comboNotesInput">${escapeHTML(combo.notes)}</textarea>
         </div>
     `;
 
@@ -2134,11 +2377,15 @@ async function verifyPermission(fileHandle, readWrite) {
     if (readWrite) {
         options.mode = 'readwrite';
     }
-    if ((await fileHandle.queryPermission(options)) === 'granted') {
-        return true;
-    }
-    if ((await fileHandle.requestPermission(options)) === 'granted') {
-        return true;
+    try {
+        if ((await fileHandle.queryPermission(options)) === 'granted') {
+            return true;
+        }
+        if ((await fileHandle.requestPermission(options)) === 'granted') {
+            return true;
+        }
+    } catch (e) {
+        console.error("Permission request failed", e);
     }
     return false;
 }
@@ -2146,7 +2393,7 @@ async function verifyPermission(fileHandle, readWrite) {
 function getDataString() {
     const data = {
         profiles: profiles,
-        version: "1.0",
+        version: "1.1",
         exportDate: new Date().toISOString()
     };
     return JSON.stringify(data, null, 2);
@@ -2171,7 +2418,7 @@ function loadDataFromString(jsonString) {
         throw new Error('無効なデータ形式です');
     }
     profiles = data.profiles;
-    saveProfiles(); // localStorageにもバックアップとして保存
+    saveProfiles();
     
     if (profiles.length > 0) {
         switchProfile(profiles[0].id);
@@ -2272,8 +2519,6 @@ async function tryAutoLoad() {
     try {
         const handle = await getStoredFileHandle();
         if (handle) {
-            // 自動読み込み時は、ブラウザがユーザーに権限要求のダイアログを出します
-            // ユーザーが拒否した場合は例外が発生し無視されます
             const hasPermission = await verifyPermission(handle, true);
             if (hasPermission) {
                 const file = await handle.getFile();
@@ -2294,28 +2539,13 @@ function showHelpModal() {
         <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary);">
             <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">基本操作</h4>
             <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>キャラクター作成</strong>: 「新規キャラクター」からゲーム・キャラごとにデータを作成します。既存キャラの技を引き継ぐこともできます。</li>
+                <li><strong>キャラクター作成</strong>: 「新規キャラクター」からゲーム・キャラごとにデータを作成します。</li>
                 <li><strong>技の追加</strong>: 通常技、必殺技などの「➕」ボタンから技を登録します。</li>
-            </ul>
-
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">コンボの作成・編集</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>コンボ作成</strong>: 登録した技ボタンをクリックすると、コンボに追加されます。</li>
-                <li><strong>途中挿入</strong>: トークン間の「+」をクリックし、技や接続タイプなどを選ぶと、その場所に挿入できます。</li>
-                <li><strong>テキストモード</strong>: 「テキストモード」に切り替えると、文字入力でまとめて編集できます。</li>
-            </ul>
-
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">データの保存と読み込み (.json)</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 0;">
-                <li>データはブラウザにも<strong>一時保存</strong>されますが、確実な保存のためにファイル保存をご利用ください。</li>
-                <li>ヘッダーの「<strong>📝 別名で保存</strong>」で、データをパソコン上に <strong>.json拡張子のファイル</strong> として保存できます。</li>
-                <li>「<strong>💾 上書き保存</strong>」で、現在開いている.jsonファイルに直接上書き保存します。</li>
-                <li>「<strong>📂 開く</strong>」で、パソコン上の.jsonファイルを読み込みます。</li>
-                <li>※「開く」または「別名で保存」したファイルは記憶され、次回ツールを開いた際に<strong>自動で読み込み</strong>を試みます（ブラウザの「許可」ダイアログが出た場合は許可してください）。</li>
+                <li><strong>コンボ作成</strong>: 技ボタンを順番にクリックしてコンボを作成します。</li>
+                <li><strong>保存</strong>: 「コンボメモに保存」でライブラリに追加されます。</li>
             </ul>
         </div>
     `;
-
     showModal(title, bodyHTML);
 }
 
@@ -2323,35 +2553,17 @@ function showManualModal() {
     const title = '便利な仕様・マニュアル';
     const bodyHTML = `
         <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary);">
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">ヒット数注釈機能</h4>
-            <p style="margin-bottom: 0.8rem; font-size: 0.9rem;">
-                テキストモードやコンボ入力で「1hit」や「3ヒット」と入力すると、ビジュアルモードで <strong>(1 hit)</strong> のように注釈として表示されます。<br>
-                <span style="color: var(--color-text-muted);">※これは「技」として登録されないため、コンボの補足として自由に使えます。</span>
-            </p>
-
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">効率的な入力・編集</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem; font-size: 0.9rem;">
-                <li><strong>テキストモードの柔軟な解析</strong>: 技の「表示」と「コマンド」、接続や修飾子の「記号」と「ラベル」のどちらでも認識されます。また、全角・半角や大文字・小文字の差異も自動で判別して吸収します。</li>
-                <li><strong>自動接続機能</strong>: 技を「5LP 5MP」のようにスペースで並べて入力すると、現在選んでいる接続タイプ（ > など）を自動的に間に挿入して解析します。</li>
-                <li><strong>ドラッグ＆ドロップ</strong>: 技ボタンをドラッグして並べ替えたり、別のカテゴリ（必殺技から通常技など）へ移動できます。</li>
-                <li><strong>トークンの挿入</strong>: コンボ表示の下にある「+」ボタンをクリックすると、その位置に技や接続タイプを挿入できます。</li>
-            </ul>
-
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">便利なライブラリ機能</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 0; font-size: 0.9rem;">
-                <li><strong>一括コピー</strong>: 左サイドバーのコンボ横のチェックボックスを入れ、「📄 テキスト出力」を押すと、選択したコンボをまとめて整形してクリップボードにコピーします。</li>
-                <li><strong>既存タグの利用</strong>: タグ入力欄の下に表示される既存タグをクリックすると、素早くタグを追加できます。</li>
-                <li><strong>自動接続</strong>: 技を連続で選ぶと、現在選択されている「接続タイプ」が自動的に挿入されます。</li>
+            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">効率的な入力</h4>
+            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem;">
+                <li><strong>テキストモード</strong>: 直接文字を打ってコンボを編集できます。</li>
+                <li><strong>ドラッグ＆ドロップ</strong>: コンボ内の技を入れ替えたり、技ボタンの並びを変更できます。</li>
+                <li><strong>挿入モード</strong>: 技と技の間の「+」をクリックすると、その位置に技を挿入できます。</li>
             </ul>
         </div>
     `;
-
     showModal(title, bodyHTML);
 }
 
-// ============================================
-// タグ管理ヘルパー
-// ============================================
 function getAllUniqueTags() {
     if (!currentProfile) return [];
     const tagsSet = new Set();
@@ -2365,50 +2577,42 @@ function getAllUniqueTags() {
 
 function renderTagUI() {
     const tags = getAllUniqueTags();
-    
     const container = document.getElementById('existingTagsContainer');
     if (container) {
         if (tags.length === 0) {
             container.innerHTML = '<span style="font-size: 0.8rem; color: var(--color-text-muted);">登録されているタグはありません</span>';
         } else {
-            container.innerHTML = tags.map(tag => 
-                `<button class="combo-tag btn-secondary" style="cursor: pointer; padding: 2px 8px; border: none; font-size: 0.8rem; border-radius: 4px;" type="button" data-tag="${tag}">${tag} +</button>`
-            ).join('');
+            container.innerHTML = tags.map(tag => {
+                const safeTag = escapeHTML(tag);
+                return `<button class="combo-tag btn-secondary" style="cursor: pointer; padding: 2px 8px; border: none; font-size: 0.8rem; border-radius: 4px;" type="button" data-tag="${safeTag}">${safeTag} +</button>`;
+            }).join('');
         }
     }
-    
     const filterContainer = document.getElementById('comboTagFilterContainer');
     if (filterContainer) {
         if (tags.length === 0) {
             filterContainer.innerHTML = '<span style="font-size: 0.8rem; color: var(--color-text-muted);">タグはありません</span>';
         } else {
-            // 現在の選択状態を維持しつつ再描画
             filterContainer.innerHTML = tags.map(tag => {
+                const safeTag = escapeHTML(tag);
                 const checked = selectedFilterTags.has(tag) ? 'checked' : '';
-                const id = `tagcb_${tag.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const id = `tagcb_${safeTag.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 return `
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; color: var(--color-text-primary); padding: 2px 0;" for="${id}">
-                        <input type="checkbox" id="${id}" data-tag="${tag}" ${checked} style="cursor: pointer; accent-color: var(--color-accent-secondary);">
-                        <span class="combo-tag" style="padding: 1px 6px; font-size: 0.78rem;">${tag}</span>
+                        <input type="checkbox" id="${id}" data-tag="${safeTag}" ${checked} style="cursor: pointer; accent-color: var(--color-accent-secondary);">
+                        <span class="combo-tag" style="padding: 1px 6px; font-size: 0.78rem;">${safeTag}</span>
                     </label>
                 `;
             }).join('');
         }
     }
-
     updateClearAllTagsBtnVisibility();
 }
 
 function updateClearAllTagsBtnVisibility() {
     const btn = document.getElementById('clearAllTagsBtn');
-    if (btn) {
-        btn.style.display = selectedFilterTags.size > 0 ? 'inline-flex' : 'none';
-    }
+    if (btn) btn.style.display = selectedFilterTags.size > 0 ? 'inline-flex' : 'none';
 }
-
-// ============================================
-// ユーティリティ
-// ============================================
 
 function generateId() {
     return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -2416,105 +2620,50 @@ function generateId() {
 
 function showNotification(message, type = 'info') {
     const existing = document.querySelector('.notification');
-    if (existing) {
-        existing.remove();
-    }
-
+    if (existing) existing.remove();
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
-
     notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${type === 'success' ? 'var(--gradient-secondary)' :
-            type === 'error' ? 'var(--gradient-primary)' :
-                'rgba(255, 255, 255, 0.2)'};
-        color: white;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        z-index: 10000;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease;
-        backdrop-filter: blur(10px);
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        background: ${type === 'success' ? 'var(--gradient-secondary)' : type === 'error' ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.2)'};
+        color: white; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 10000; font-weight: 600;
+        animation: slideInRight 0.3s ease; backdrop-filter: blur(10px);
     `;
-
     document.body.appendChild(notification);
-
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(100px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(100px);
-        }
-    }
-`;
-document.head.appendChild(style);
-
-// ============================================
-// 追加機能: 上書き保存とテキスト出力
-// ============================================
-
 function updateLoadedCombo() {
     if (!currentProfile || !loadedComboId) return;
-    
     const combo = currentProfile.combos.find(c => c.id === loadedComboId);
     if (!combo) return;
-
     if (comboTokens.length === 0) {
         showNotification('コンボが空です', 'error');
         return;
     }
-
     const nameInput = document.getElementById('currentComboName');
     if (nameInput) {
         const name = nameInput.value.trim();
         const damage = document.getElementById('currentComboDamage').value.trim();
         const notes = document.getElementById('currentComboNotes').value.trim();
-
         if (!name) {
             showNotification('コンボ名を入力してください', 'error');
             return;
         }
-
         combo.name = name;
         combo.damage = parseInt(damage) || 0;
         combo.notes = notes;
-        
         const tagsInput = document.getElementById('currentComboTags');
-        if (tagsInput) {
-            combo.tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
-        }
+        if (tagsInput) combo.tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
     }
-
     combo.tokens = JSON.parse(JSON.stringify(comboTokens));
-    combo.displayString = generateDisplayString(comboTokens);
+    combo.displayString = generateDisplayString(comboTokens, null, false);
+    combo.resources = getResourceDataFromUI();
     combo.updatedAt = new Date().toISOString();
-
     saveProfiles();
     renderComboLibrary();
     renderTagUI();
@@ -2523,81 +2672,212 @@ function updateLoadedCombo() {
 
 function updateComboBtnVisibility() {
     const btn = document.getElementById('updateComboBtn');
-    if (btn) {
-        if (loadedComboId) {
-            btn.style.display = 'inline-flex';
-        } else {
-            btn.style.display = 'none';
-        }
-    }
+    if (btn) btn.style.display = loadedComboId ? 'inline-flex' : 'none';
 }
 
 function exportSelectedCombosText() {
     if (!currentProfile) return;
-
     const checkboxes = document.querySelectorAll('.combo-select-cb:checked');
     if (checkboxes.length === 0) {
         showNotification('コンボが選択されていません', 'error');
         return;
     }
-
     const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.comboId);
-    
-    // 現在のリスト表示順（ソート・検索込み）に従って出力するのが直感的
     const listItems = document.querySelectorAll('.combo-item');
-    const orderedIds = Array.from(listItems)
-        .map(item => item.dataset.comboId)
-        .filter(id => selectedIds.includes(id));
-
+    const orderedIds = Array.from(listItems).map(item => item.dataset.comboId).filter(id => selectedIds.includes(id));
     const selectedCombos = orderedIds.map(id => currentProfile.combos.find(c => c.id === id));
-
     let exportText = '';
     selectedCombos.forEach((combo, index) => {
         exportText += `${combo.name}\n`;
         if (combo.damage > 0) exportText += `ダメージ: ${combo.damage}\n`;
         if (combo.tags && combo.tags.length > 0) exportText += `タグ: ${combo.tags.join(', ')}\n`;
+        
+        // ゲージ（リソース）情報の追加
+        if (combo.resources && currentProfile.resourceDefinitions) {
+            const resourceParts = [];
+            currentProfile.resourceDefinitions.forEach(def => {
+                const resData = combo.resources[def.id];
+                if (resData) {
+                    const details = [];
+                    if (resData.consumed) details.push(`消費${resData.consumed}`);
+                    if (def.showRequired && resData.required) details.push(`必要${resData.required}`);
+                    if (def.showGain && resData.gained) details.push(`獲得${resData.gained}`);
+                    
+                    if (details.length > 0) {
+                        resourceParts.push(`${def.name}[${details.join('/')}]`);
+                    }
+                }
+            });
+            if (resourceParts.length > 0) {
+                exportText += `ゲージ: ${resourceParts.join(' ')}\n`;
+            }
+        }
+
         exportText += `${combo.displayString}\n`;
         if (combo.notes) exportText += `メモ: ${combo.notes}\n`;
-        
-        // コンボ間は改行により１行間隔を開ける
-        if (index < selectedCombos.length - 1) {
-            exportText += '\n\n';
-        }
+        if (index < selectedCombos.length - 1) exportText += '\n\n';
     });
-
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(exportText).then(() => {
             showNotification(`${selectedCombos.length}件のコンボをコピーしました`, 'success');
-            // 全選択チェックボックスの解除
             const selectAll = document.getElementById('selectAllCombos');
             if(selectAll) selectAll.checked = false;
             document.querySelectorAll('.combo-select-cb').forEach(cb => cb.checked = false);
-        }).catch(err => {
-            console.error('コピーに失敗しました', err);
-            showFallbackExportModal(exportText);
-        });
+        }).catch(() => showFallbackExportModal(exportText));
     } else {
-        // クリップボードAPIが使えない場合（ローカルファイル実行時など）
         showFallbackExportModal(exportText);
     }
 }
 
 function showFallbackExportModal(text) {
-    const bodyHTML = `
-        <p style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.9rem;">
-            テキストをコピーしてください:
-        </p>
-        <textarea class="form-textarea" style="height: 300px; width: 100%; resize: vertical;" readonly id="exportTextArea">${text}</textarea>
-    `;
+    const bodyHTML = `<p style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.9rem;">テキストをコピーしてください:</p><textarea class="form-textarea" style="height: 300px; width: 100%;" readonly id="exportTextArea">${text}</textarea>`;
     showModal('テキスト出力', bodyHTML, () => true);
-    
-    // 少し遅延させてから選択状態にする
-    setTimeout(() => {
-        const textarea = document.getElementById('exportTextArea');
-        if (textarea) {
-            textarea.select();
-        }
-    }, 100);
+    setTimeout(() => document.getElementById('exportTextArea')?.select(), 100);
 }
 
+function exportComboAsImage() {
+    if (!currentProfile) return;
+    if (comboTokens.length === 0) {
+        showNotification('コンボが空です', 'error');
+        return;
+    }
 
+    const oldTemplate = document.getElementById('exportTemplate');
+    if (oldTemplate) oldTemplate.remove();
+
+    const template = document.createElement('div');
+    template.id = 'exportTemplate';
+    
+    const comboName = document.getElementById('currentComboName').value.trim() || 'Untitled Combo';
+    const damage = document.getElementById('currentComboDamage').value.trim() || '0';
+    const tags = document.getElementById('currentComboTags') ? document.getElementById('currentComboTags').value.trim().split(',').filter(t => t) : [];
+    // リソース情報の生成
+    const resourceData = getResourceDataFromUI();
+    const resourcesHtml = (currentProfile.resourceDefinitions || []).map(def => {
+        const data = resourceData[def.id] || {};
+        // 全て0なら表示しない
+        if (!data.consumed && !data.gained && !data.required) return '';
+        
+        let details = [];
+        const labelStyle = 'font-size: 0.65rem; color: var(--color-text-muted); margin-right: 4px; font-weight: normal;';
+        
+        if (data.consumed) details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">使用量</span><span style="color:var(--color-danger)">${data.consumed}</span></div>`);
+        if (def.showGain && data.gained) {
+            details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">獲得量</span><span style="color:var(--color-success)">${data.gained}</span></div>`);
+        }
+        if (def.showRequired && data.required) {
+            details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">必要量</span><span style="color:var(--color-accent-secondary)">${data.required}</span></div>`);
+        }
+        
+        if (details.length === 0) return '';
+
+        return `
+            <div class="export-resource-item" style="border-left: 3px solid ${def.color}; padding-left: 10px; margin-right: 20px;">
+                <div style="font-size: 0.75rem; color: ${def.color}; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">${def.name}</div>
+                <div style="font-size: 1.1rem; font-weight: 800; display: flex; gap: 15px; align-items: center;">${details.join('')}</div>
+            </div>
+        `;
+    }).join('');
+
+    // ビジュアルウィンドウのスタイルを動的に取得（将来的な色変更への連動対応）
+    const visualWindow = document.querySelector('.combo-display');
+    const visualStyles = window.getComputedStyle(visualWindow);
+    
+    // コンボレシピをビジュアル表示形式にする (HTMLエスケープあり)
+    const displayString = generateDisplayString(comboTokens, null, true);
+    const comboRecipeHtml = `
+        <div style="
+            background: ${visualStyles.backgroundColor}; 
+            color: ${visualStyles.color}; 
+            border: ${visualStyles.border}; 
+            box-shadow: ${visualStyles.boxShadow};
+            padding: 18px 22px; 
+            border-radius: 12px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            font-size: 1.4rem; 
+            font-weight: 600; 
+            line-height: 1.4; 
+            word-break: break-all; 
+            font-family: ${visualStyles.fontFamily};
+            text-align: center;
+        ">
+            ${displayString}
+        </div>
+    `;
+
+
+    template.innerHTML = `
+        <div style="padding: 22px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 20px; border: 2px solid rgba(255, 255, 255, 0.1);">
+            <div class="export-card-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="export-card-icon" style="width: 65px; height: 65px; border-radius: 8px; flex-shrink: 0; overflow: hidden; border: 1.5px solid var(--color-accent-secondary); box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);">
+                    ${currentProfile.iconUrl ? `<img src="${currentProfile.iconUrl}" alt="Icon" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover;">` : '<div style="width:100%; height:100%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👤</div>'}
+                </div>
+                <div class="export-card-titles" style="flex: 1;">
+                    <div class="export-card-game" style="font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px;">${currentProfile.gameName}</div>
+                    <div class="export-card-combo-name" style="font-size: 1.6rem; font-weight: 400; color: #fff; margin: 2px 0; font-family: 'Orbitron', sans-serif;">${comboName}</div>
+                    <div class="export-card-character-container" style="margin-top: 2px;">
+                        <span style="font-size: 0.6rem; color: var(--color-text-muted); text-transform: uppercase; display: block; line-height: 1; margin-bottom: 1px;">Character:</span>
+                        <div class="export-card-character" style="font-size: 1.05rem; font-weight: 400; color: #fff; margin: 0; opacity: 0.9;">${currentProfile.characterName}</div>
+                    </div>
+                </div>
+                <div class="export-card-damage-container" style="background: rgba(255, 51, 102, 0.1); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255, 51, 102, 0.2); text-align: right;">
+                    <div class="export-card-damage-label" style="font-size: 0.65rem; color: var(--color-accent-primary);">Damage</div>
+                    <div class="export-card-damage-value" style="font-size: 1.4rem; font-weight: 800; font-family: 'Orbitron', sans-serif;">${damage}</div>
+                </div>
+            </div>
+            
+            <div class="export-card-resources" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 0 5px;">
+                ${resourcesHtml}
+            </div>
+
+            <div class="export-card-recipe-container" style="margin-bottom: 20px;">
+                ${comboRecipeHtml}
+            </div>
+            
+            <div class="export-card-footer" style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; color: var(--color-text-muted);">
+                <div class="export-card-tags">
+                    ${tags.map(tag => `<span class="export-card-tag" style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; margin-right: 5px;">#${tag.trim()}</span>`).join('')}
+                </div>
+                <div class="export-card-watermark" style="opacity: 0.4; font-family: 'Orbitron', sans-serif;">Combo Memo Tool</div>
+            </div>
+        </div>
+    `;
+
+
+
+    document.body.appendChild(template);
+
+    showNotification('画像を生成中...', 'info');
+    
+    const images = template.querySelectorAll('img');
+    const promises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+        });
+    });
+
+    Promise.all(promises).then(() => {
+        html2canvas(template, {
+            backgroundColor: "#0f172a",
+            useCORS: true,
+            allowTaint: false,
+            scale: 2,
+            logging: false
+        }).then(canvas => {
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.download = `combo_${currentProfile.characterName}_${comboName.replace(/\s+/g, '_')}.png`;
+            link.href = image;
+            link.click();
+            template.remove();
+            showNotification('画像を保存しました', 'success');
+        }).catch(err => {
+            console.error('Export failed:', err);
+            showNotification('画像の生成に失敗しました', 'error');
+            template.remove();
+        });
+    });
+}

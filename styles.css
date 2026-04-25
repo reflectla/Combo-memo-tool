@@ -130,18 +130,28 @@ body::before {
 }
 
 
-/* Combo Display Section */
+/* Combo Display Section (Sticky part) */
 .combo-display-section {
-    background: rgba(30, 39, 64, 0.95);
+    background: rgba(30, 39, 64, 0.98);
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(0, 212, 255, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem var(--spacing-md) var(--spacing-md) var(--spacing-md);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+}
+
+/* Combo Meta Section (Scrollable part) */
+.combo-meta-section {
+    background: rgba(30, 39, 64, 0.6);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-xl);
     padding: var(--spacing-md);
-    box-shadow: var(--shadow-lg);
+    margin-bottom: 1.5rem;
     animation: fadeInUp 0.6s ease;
-    position: sticky;
-    top: 20px;
-    z-index: 100;
 }
 
 .section-header {
@@ -335,9 +345,9 @@ body::before {
 
 /* Panels Grid */
 .panels-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
 }
 
 /* Token Drag & Drop */
@@ -445,11 +455,34 @@ body::before {
     font-size: 1.1rem;
 }
 
+.link-panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-xl);
+    min-height: 70px;
+}
+
+.link-panel .panel-header {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 160px;
+    flex-shrink: 0;
+}
+
+.link-panel .panel-subtitle {
+    display: none; /* Hide subtitle to save space in row mode */
+}
+
 /* Link Buttons */
 .link-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    flex: 1;
 }
 
 .link-btn {
@@ -506,17 +539,23 @@ body::before {
     color: white;
 }
 
-/* Modifier Buttons */
 .modifier-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .modifier-groups {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+    display: grid;
+    grid-template-columns: 1fr 3fr; /* Prefix/Suffix side by side */
+    gap: var(--spacing-xl);
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .modifier-groups {
+        grid-template-columns: 1fr;
+    }
 }
 
 .modifier-group-toggle {
@@ -557,8 +596,8 @@ body::before {
 }
 
 .modifier-group-content.modifier-group-open {
-    max-height: 220px;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
     opacity: 1;
     padding-top: 0.35rem;
     padding-bottom: 0.1rem;
@@ -1458,3 +1497,235 @@ select option {
     opacity: 1;
     padding: 0.5rem;
 }
+
+/* Profile Section & Character Icon */
+.profile-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.profile-current-icon-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--color-accent-secondary);
+    box-shadow: var(--shadow-glow-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-current-icon-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-current-icon-container .empty-icon-placeholder {
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+/* Combo Card Export Template (Hidden from main UI, used by html2canvas) */
+#exportTemplate {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+    width: 800px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    font-family: 'Inter', sans-serif;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.export-card-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 20px;
+}
+
+.export-card-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 3px solid var(--color-accent-secondary);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.export-card-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.export-card-titles {
+    flex: 1;
+}
+
+.export-card-game {
+    font-size: 1rem;
+    color: var(--color-accent-secondary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+}
+
+.export-card-character {
+    font-size: 2.8rem;
+    font-weight: 900;
+    font-family: 'Orbitron', sans-serif;
+    margin: 2px 0;
+    color: #ffffff; /* 明確に白に設定 */
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+}
+
+.export-card-combo-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.export-card-damage-container {
+    background: rgba(255, 51, 102, 0.15);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 51, 102, 0.3);
+    text-align: right;
+}
+
+.export-card-damage-label {
+    font-size: 0.8rem;
+    color: var(--color-accent-primary);
+    text-transform: uppercase;
+}
+
+.export-card-damage-value {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'Orbitron', sans-serif;
+    color: #fff;
+}
+
+.export-card-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    min-height: 120px;
+    align-items: center;
+    justify-content: center;
+}
+
+.export-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.export-card-tags {
+    display: flex;
+    gap: 10px;
+}
+
+.export-card-tag {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+}
+
+.export-card-watermark {
+    font-family: 'Orbitron', sans-serif;
+    opacity: 0.5;
+}
+
+/* Modal styles for icon input */
+.profile-modal-icon-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.profile-modal-icon-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.btn-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.btn-file-label:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-accent-secondary);
+}
+
+/* Resource Management */
+.resource-input-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    transition: all var(--transition-fast);
+}
+
+.resource-input-group .field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.export-card-resources {
+    display: flex;
+    gap: 24px;
+    margin: 0 0 24px 0;
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.export-resource-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+

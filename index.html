@@ -12,6 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700;900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -75,6 +76,9 @@
                     </div>
 
                     <div class="profile-section">
+                        <div class="profile-current-icon-container" id="currentProfileIconContainer">
+                            <!-- アイコン画像がここに表示される -->
+                        </div>
                         <select id="profileSelect" class="profile-select">
                             <option value="">キャラクターを選択...</option>
                         </select>
@@ -106,8 +110,8 @@
                 </header>
 
                 <main class="main-content">
-                    <!-- コンボ表示エリア -->
-                    <section class="combo-display-section">
+                    <!-- コンボのメタ情報（名前、タグ、ダメージなど） - スクロールで流れる部分 -->
+                    <div class="combo-meta-section">
                         <div class="section-header">
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <h2>現在のコンボ</h2>
@@ -129,6 +133,10 @@
                                 <button id="saveToLibraryBtn" class="btn btn-primary">
                                     <span class="btn-icon">📚</span>
                                     別名で保存
+                                </button>
+                                <button id="exportImageBtn" class="btn btn-secondary" title="コンボを画像として保存">
+                                    <span class="btn-icon">🖼️</span>
+                                    画像で保存
                                 </button>
                                 <button id="clearComboBtn" class="btn btn-secondary">
                                     <span class="btn-icon">🗑️</span>
@@ -156,6 +164,15 @@
                             </div>
                         </div>
 
+                        <!-- ゲージ（リソース）入力エリア (動的生成) -->
+                        <div id="comboResourceInputs" class="combo-resource-inputs" style="display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.8rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: none;">
+                            <!-- 動的にリソース入力欄がここに生成される -->
+                        </div>
+                    </div>
+
+
+                    <!-- コンボ表示エリア - 画面上部に固定される部分 -->
+                    <section class="combo-display-section">
                         <!-- ビジュアルモード表示 -->
                         <div id="visualModeDisplay" class="visual-mode">
                             <div id="comboDisplay" class="combo-display">
@@ -166,6 +183,7 @@
                             </div>
                             <div id="comboTokens" class="combo-tokens"></div>
                         </div>
+
 
                         <!-- テキストモード表示 -->
                         <div id="textModeDisplay" class="text-mode" style="display: none;">
