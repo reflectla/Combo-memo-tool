@@ -3142,14 +3142,45 @@ async function tryAutoLoad() {
 function showHelpModal() {
     const title = '使い方ガイド';
     const bodyHTML = `
-        <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary);">
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">基本操作</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>キャラクター作成</strong>: 「新規キャラクター」からゲーム・キャラごとにデータを作成します。</li>
-                <li><strong>技の追加</strong>: 通常技、必殺技などの「➕」ボタンから技を登録します。</li>
-                <li><strong>コンボ作成</strong>: 技ボタンを順番にクリックしてコンボを作成します。</li>
-                <li><strong>保存</strong>: 「コンボメモに保存」でライブラリに追加されます。</li>
-            </ul>
+        <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary); max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+            <div style="background: rgba(0, 180, 216, 0.1); border-left: 4px solid var(--color-accent-secondary); padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; font-weight: 500;">格闘ゲームのコンボメモ作成を支援するためのツールです。コンボ構成を視覚的に組み立てることができ、テキスト出力や画像形式（コンボカード）での保存に対応しています。</p>
+            </div>
+
+            <section style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem; display: flex; align-items: center; gap: 8px;">
+                    <span>🚀</span> 最初の3ステップ
+                </h4>
+                <ol style="padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                    <li><strong>キャラクターを作る</strong>: 左上の「新規キャラクター」から作成します。</li>
+                    <li><strong>技を登録する</strong>: 技パネルの「➕」または「📄」から技を登録します。</li>
+                    <li><strong>コンボを組み立てる</strong>: 技ボタンを順番にクリックして作成します。</li>
+                </ol>
+            </section>
+
+            <section style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem; display: flex; align-items: center; gap: 8px;">
+                    <span>💡</span> 便利な機能
+                </h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.8rem;">
+                    <li style="display: flex; gap: 10px;">
+                        <span style="color: var(--color-accent-secondary);">●</span>
+                        <div><strong>タグ管理</strong>: 「始動」を含むタグは青、その他はオレンジで色分け。ドラッグ＆ドロップでコンボに付与できます。</div>
+                    </li>
+                    <li style="display: flex; gap: 10px;">
+                        <span style="color: var(--color-accent-secondary);">●</span>
+                        <div><strong>画像保存</strong>: 現在のコンボをカード形式で画像出力。SNSへの共有などに利用できます。</div>
+                    </li>
+                    <li style="display: flex; gap: 10px;">
+                        <span style="color: var(--color-accent-secondary);">●</span>
+                        <div><strong>一括操作</strong>: サイドバーで複数のコンボを選んで、テキスト出力や一括削除が可能です。</div>
+                    </li>
+                </ul>
+            </section>
+
+            <div style="font-size: 0.85rem; color: var(--color-text-muted); text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                さらに詳しい仕様は、画面中央の「📖 マニュアル」ボタンをご覧ください。
+            </div>
         </div>
     `;
     showModal(title, bodyHTML);
@@ -3158,13 +3189,48 @@ function showHelpModal() {
 function showManualModal() {
     const title = '便利な仕様・マニュアル';
     const bodyHTML = `
-        <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary);">
-            <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2rem;">効率的な入力</h4>
-            <ul style="list-style: disc; padding-left: 1.2rem; margin-bottom: 1rem;">
-                <li><strong>テキストモード</strong>: 直接文字を打ってコンボを編集できます。</li>
-                <li><strong>ドラッグ＆ドロップ</strong>: コンボ内の技を入れ替えたり、技ボタンの並びを変更できます。</li>
-                <li><strong>挿入モード</strong>: 技と技の間の「+」をクリックすると、その位置に技を挿入できます。</li>
-            </ul>
+        <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary); max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+            
+            <section style="margin-bottom: 2rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem;">⌨️ テキストモードのルール</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">直接文字を打って編集でき、以下の記号は自動的に整形されます。</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.4rem;"><span style="color: var(--color-accent-secondary);">">"</span> : 通常接続に変換</div>
+                    <div style="margin-bottom: 0.4rem;"><span style="color: var(--color-accent-secondary);">"xx"</span> : キャンセルに変換</div>
+                    <div style="margin-bottom: 0.4rem;"><span style="color: var(--color-accent-secondary);">"(dl)"</span> : 修飾子のディレイに変換</div>
+                    <div><span style="color: var(--color-accent-secondary);">"(5 hit)"</span> : ヒット数注釈。数値は自由。</div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); mt: 0.5rem;">※技名を入力すると、自動的にデフォルトの接続（ > など）が付与されます。</p>
+            </section>
+
+            <section style="margin-bottom: 2rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem;">📄 技の一括登録</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">技カテゴリの「📄」ボタンから、リスト形式で一気に技を登録できます。</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+                    形式: 表示名, コマンド (1行1つ)<br>
+                    例:<br>
+                    波動拳, 236P<br>
+                    昇龍拳, 623P
+                </div>
+            </section>
+
+            <section style="margin-bottom: 2rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem;">🖱️ ビジュアルエディタのコツ</h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.8rem;">
+                    <li><strong>ドラッグ＆ドロップ</strong>: コンボ内のパーツを掴んで左右に入れ替えたり、パネル内の技ボタンの並び順を変更できます。</li>
+                    <li><strong>挿入モード</strong>: パーツ間の「+」アイコンをクリックすると、その位置に新しい技を割り込ませることができます。</li>
+                    <li><strong>修飾子の連続付与</strong>: (dl) や [溜め] などの修飾子ボタンは、技を選択した後に連続してクリックして複数付けることができます。</li>
+                </ul>
+            </section>
+
+            <section style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--color-accent-secondary); margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3rem;">💾 データの保存と管理</h4>
+                <p style="font-size: 0.9rem;">
+                    <strong>上書き保存</strong>: 読み込んだコンボを編集して、元の場所に保存します。名前が変わっている場合は確認ダイアログが出ます。<br>
+                    <strong>別名で保存</strong>: 編集内容を新しいコンボとしてライブラリに追加します。<br>
+                    <strong>JSONファイル</strong>: 画面右上の「保存/開く」から、全データをPCにファイルとして書き出せます。定期的なバックアップを推奨します。
+                </p>
+            </section>
         </div>
     `;
     showModal(title, bodyHTML);
