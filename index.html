@@ -37,6 +37,7 @@
                     <div class="tag-filter-header" id="tagFilterToggleBar">
                         <span class="tag-filter-title">🏷️ タグで絞り込む</span>
                         <div class="tag-filter-header-actions">
+                            <button id="manageTagsBtn" class="btn-tag-action" title="タグを編集・管理" style="margin-right: 4px;">⚙️ 編集</button>
                             <button id="clearAllTagsBtn" class="btn-clear-tags" title="タグを全て外す" style="display: none;">✕ 全て外す</button>
                             <span class="tag-filter-arrow" id="tagFilterArrow">▼</span>
                         </div>
@@ -44,22 +45,34 @@
                     <div id="comboTagFilterContainer" class="tag-filter-container tag-filter-open">
                         <span style="font-size: 0.8rem; color: var(--color-text-muted);">タグがありません</span>
                     </div>
-                    <select id="comboSortSelect" class="sort-select">
-                        <option value="updatedAt">更新日時順</option>
-                        <option value="name">名前順</option>
-                        <option value="damage">ダメージ順</option>
-                        <option value="createdAt">作成日時順</option>
-                    </select>
-                </div>
+                    <div id="activeFiltersDisplay" class="active-filters-display" style="display: none; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 0.5rem;">
+                        <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: 4px;">絞り込み中:</div>
+                        <div id="activeFilterTagsList" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+                    </div>
+                        <select id="comboSortSelect" class="sort-select" style="flex: 1;">
+                            <option value="updatedAt">更新日時順</option>
+                            <option value="name">名前順</option>
+                            <option value="damage">ダメージ順</option>
+                            <option value="createdAt">作成日時順</option>
+                        </select>
+                        <button id="toggleSortOrderBtn" class="btn-icon-small" title="昇順/降順" style="padding: 0.2rem; min-width: 30px;">
+                            <span id="sortOrderIcon">🔽</span>
+                        </button>
+                    </div>
 
                 <div class="library-export-controls" style="padding: 0 0.5rem 0.5rem; display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 4px;">
                         <input type="checkbox" id="selectAllCombos" title="全て選択">
                         <label for="selectAllCombos" style="font-size: 0.8rem; color: var(--color-text-secondary); cursor: pointer;">全て選択</label>
                     </div>
-                    <button id="exportSelectedCombosBtn" class="btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: var(--color-text-primary); cursor: pointer;">
-                        📄 テキスト出力
-                    </button>
+                    <div style="display: flex; gap: 4px;">
+                        <button id="exportSelectedCombosBtn" class="btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: var(--color-text-primary); cursor: pointer;">
+                            📄 テキスト出力
+                        </button>
+                        <button id="deleteSelectedCombosBtn" class="btn-danger" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255, 51, 102, 0.3); background: rgba(255, 51, 102, 0.1); color: #ff3366; cursor: pointer;">
+                            🗑️ 一括削除
+                        </button>
+                    </div>
                 </div>
 
                 <div id="comboLibraryList" class="combo-library-list">
@@ -76,6 +89,7 @@
                         <h1 class="title">
                             コンボメモツール
                             <span id="currentFileNameDisplay" class="current-file-name-tag"></span>
+                            <span id="lastUpdatedDisplay" class="last-updated-tag" style="display: none; font-size: 0.7rem; color: var(--color-text-muted); margin-left: 0.5rem;"></span>
                             <span class="title-subtitle">Combo Notation Builder</span>
                         </h1>
                     </div>
@@ -143,29 +157,41 @@
                                     <span class="btn-icon">🖼️</span>
                                     画像で保存
                                 </button>
-                                <button id="clearComboBtn" class="btn btn-secondary">
+                                <button id="newComboBtn" class="btn btn-secondary" title="コンボを新規作成" style="display: none;">
+                                    <span class="btn-icon">✨</span>
+                                    <span>新規作成</span>
+                                </button>
+                                <button id="clearComboBtn" class="btn btn-secondary" title="現在のコンボを空にする">
                                     <span class="btn-icon">🗑️</span>
-                                    クリア
+                                    <span>クリア</span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- コンボ情報入力エリア -->
-                        <div class="combo-info-inputs" style="display: flex; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                            <div style="flex: 1;">
-                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">タグ（カンマ区切り）</label>
-                                <input type="text" id="currentComboTags" class="form-input" placeholder="例: 画面端, ゲージ使用" style="background: rgba(255,255,255,0.05);">
-                                <div id="existingTagsContainer" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.5rem; min-height: 20px;">
-                                    <!-- 既存のタグボタンがここに追加される -->
+                        <div class="combo-info-inputs" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="display: flex; gap: 1rem; width: 100%;">
+                                <div style="flex: 0 0 100px;">
+                                    <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">ダメージ</label>
+                                    <input type="number" id="currentComboDamage" class="form-input" placeholder="0" style="background: rgba(255,255,255,0.05);">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">備考</label>
+                                    <input type="text" id="currentComboNotes" class="form-input" placeholder="備考やメモを入力..." style="background: rgba(255,255,255,0.05);">
                                 </div>
                             </div>
-                            <div style="flex: 0 0 100px;">
-                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">ダメージ</label>
-                                <input type="number" id="currentComboDamage" class="form-input" placeholder="0" style="background: rgba(255,255,255,0.05);">
-                            </div>
-                            <div style="flex: 2;">
-                                <label style="display: block; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.3rem;">備考</label>
-                                <input type="text" id="currentComboNotes" class="form-input" placeholder="備考やメモを入力..." style="background: rgba(255,255,255,0.05);">
+                            <div style="width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <label style="font-size: 0.8rem; color: var(--color-text-secondary);">タグ（カンマ区切り、または下から選択）</label>
+                                    <button id="manageTagsBtnBottom" class="btn-tag-action">⚙️ タグを編集・管理</button>
+                                </div>
+                                <div id="currentComboTagsDropZone" class="tag-drop-zone">
+                                    <div id="currentComboTagsList" class="current-tags-list"></div>
+                                    <input type="text" id="currentComboTagsInput" class="tag-bare-input" placeholder="タグを入力してEnter、またはここへドラッグ...">
+                                </div>
+                                <div id="existingTagsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 20px;">
+                                    <!-- 既存のタグボタンがここに追加される -->
+                                </div>
                             </div>
                         </div>
 
@@ -208,9 +234,19 @@
                             <div class="panel-header">
                                 <h3>接続タイプ</h3>
                                 <span class="panel-subtitle">Link Type</span>
-                                <button id="addLinkTypeBtn" class="btn-icon-small" title="接続タイプを追加">
-                                    <span>➕</span>
-                                </button>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <select id="linkDisplayToggle" class="display-toggle-select" title="表示形式">
+                                        <option value="symbol">表記</option>
+                                        <option value="label">ID</option>
+                                    </select>
+                                    <button id="toggleLinkEditModeBtn" class="btn-mode-toggle" title="入力モード/編集モード切替">
+                                        <span class="mode-icon">🖱️</span>
+                                        <span class="mode-text">入力</span>
+                                    </button>
+                                    <button id="addLinkTypeBtn" class="btn-icon-small" title="接続タイプを追加">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
                             </div>
                             <div id="linkButtons" class="link-buttons">
                                 <!-- 動的生成 -->
@@ -222,9 +258,19 @@
                             <div class="panel-header">
                                 <h3>修飾子</h3>
                                 <span class="panel-subtitle">Modifiers</span>
-                                <button id="addModifierBtn" class="btn-icon-small" title="修飾子を追加">
-                                    <span>➕</span>
-                                </button>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <select id="modifierDisplayToggle" class="display-toggle-select" title="表示形式">
+                                        <option value="symbol">表記</option>
+                                        <option value="label">ID</option>
+                                    </select>
+                                    <button id="toggleModifierEditModeBtn" class="btn-mode-toggle" title="入力モード/編集モード切替">
+                                        <span class="mode-icon">🖱️</span>
+                                        <span class="mode-text">入力</span>
+                                    </button>
+                                    <button id="addModifierBtn" class="btn-icon-small" title="修飾子を追加">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="modifier-groups">
                                 <div class="modifier-group">
@@ -254,15 +300,30 @@
                         <div class="panel-header">
                             <h3>技選択</h3>
                             <span class="panel-subtitle">Move Selection</span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <select id="moveDisplayToggle" class="display-toggle-select" title="表示形式">
+                                    <option value="display">表示</option>
+                                    <option value="notation">コマンド</option>
+                                </select>
+                                <button id="toggleMoveEditModeBtn" class="btn-mode-toggle" title="入力モード/編集モード切替">
+                                    <span class="mode-icon">🖱️</span>
+                                    <span class="mode-text">入力</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="move-categories">
                             <!-- 通常技 -->
                             <div class="move-category">
                                 <div class="category-header">
                                     <h4 class="category-title">通常技</h4>
-                                    <button class="btn-icon-small add-move-btn" data-category="normal" title="技を追加">
-                                        <span>➕</span>
-                                    </button>
+                                    <div class="category-actions" style="display: flex; gap: 4px;">
+                                        <button class="btn-icon-small add-move-btn" data-category="normal" title="技を追加">
+                                            <span>➕</span>
+                                        </button>
+                                        <button class="btn-icon-small bulk-add-move-btn" data-category="normal" title="一括登録">
+                                            <span>📄</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="normalMoves" class="move-buttons"></div>
                             </div>
@@ -270,9 +331,14 @@
                             <div class="move-category">
                                 <div class="category-header">
                                     <h4 class="category-title">必殺技</h4>
-                                    <button class="btn-icon-small add-move-btn" data-category="special" title="技を追加">
-                                        <span>➕</span>
-                                    </button>
+                                    <div class="category-actions" style="display: flex; gap: 4px;">
+                                        <button class="btn-icon-small add-move-btn" data-category="special" title="技を追加">
+                                            <span>➕</span>
+                                        </button>
+                                        <button class="btn-icon-small bulk-add-move-btn" data-category="special" title="一括登録">
+                                            <span>📄</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="specialMoves" class="move-buttons"></div>
                             </div>
@@ -282,9 +348,14 @@
                                 <div class="move-category">
                                     <div class="category-header">
                                         <h4 class="category-title">超必殺技</h4>
-                                        <button class="btn-icon-small add-move-btn" data-category="super" title="技を追加">
-                                            <span>➕</span>
-                                        </button>
+                                        <div class="category-actions" style="display: flex; gap: 4px;">
+                                            <button class="btn-icon-small add-move-btn" data-category="super" title="技を追加">
+                                                <span>➕</span>
+                                            </button>
+                                            <button class="btn-icon-small bulk-add-move-btn" data-category="super" title="一括登録">
+                                                <span>📄</span>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div id="superMoves" class="move-buttons"></div>
                                 </div>
@@ -292,9 +363,14 @@
                                 <div class="move-category">
                                     <div class="category-header">
                                         <h4 class="category-title">ジャンプ攻撃</h4>
-                                        <button class="btn-icon-small add-move-btn" data-category="jump" title="技を追加">
-                                            <span>➕</span>
-                                        </button>
+                                        <div class="category-actions" style="display: flex; gap: 4px;">
+                                            <button class="btn-icon-small add-move-btn" data-category="jump" title="技を追加">
+                                                <span>➕</span>
+                                            </button>
+                                            <button class="btn-icon-small bulk-add-move-btn" data-category="jump" title="一括登録">
+                                                <span>📄</span>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div id="jumpMoves" class="move-buttons"></div>
                                 </div>
