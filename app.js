@@ -177,12 +177,12 @@ function setupEventListeners() {
         const damage = document.getElementById('currentComboDamage').value.trim();
         const tags = currentComboTags.join(', ');
         const notes = document.getElementById('currentComboNotes').value.trim();
-        
+
         if (comboTokens.length === 0) {
             showNotification('コンボが空です', 'error');
             return;
         }
-        
+
         if (!name) {
             showComboSaveModal();
             return;
@@ -292,7 +292,7 @@ function setupEventListeners() {
         document.getElementById('sortOrderIcon').textContent = comboSortOrder === 'desc' ? '🔽' : '🔼';
         renderComboLibrary(document.getElementById('comboSearchInput').value);
     });
-    
+
     // タグ入力補助
     document.getElementById('existingTagsContainer').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON' && e.target.dataset.tag) {
@@ -394,7 +394,7 @@ function setupEventListeners() {
 
 function createProfile(gameName, characterName, baseProfileId = null, iconUrl = '') {
     let moves, linkTypes, modifiers;
-    
+
     if (baseProfileId) {
         const base = profiles.find(p => p.id === baseProfileId);
         if (base) {
@@ -524,12 +524,12 @@ function switchProfile(profileId, forceReset = true) {
     currentProfile = profile;
     normalizeProfileData(currentProfile);
     localStorage.setItem('lastProfileId', profileId);
-    
+
     if (forceReset && !isSameProfile) {
         comboTokens = [];
         loadedComboId = null;
         selectedFilterTags = new Set();
-        
+
         const nameInput = document.getElementById('currentComboName');
         if (nameInput) {
             nameInput.value = '';
@@ -618,7 +618,7 @@ function updateMove(moveId, moveData) {
 
     const oldId = move.id;
     const newId = moveData.id;
-    
+
     // ID変更時の重複チェック
     if (newId !== oldId && currentProfile.moves.find(m => m.id === newId)) {
         showNotification('同じIDの技が既に存在します', 'error');
@@ -626,7 +626,7 @@ function updateMove(moveId, moveData) {
     }
 
     // 既存のコンボに影響があるかチェック（tokens が未定義・非配列のデータを安全にスキップ）
-    const affectedCombos = currentProfile.combos.filter(c => 
+    const affectedCombos = currentProfile.combos.filter(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'move' && t.id === oldId)
     );
 
@@ -676,7 +676,7 @@ function deleteMove(moveId) {
     if (!move) return;
 
     // 既存のコンボで使用されているかチェック
-    const isUsed = currentProfile.combos.some(c => 
+    const isUsed = currentProfile.combos.some(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'move' && t.id === moveId)
     );
 
@@ -684,19 +684,23 @@ function deleteMove(moveId) {
     if (isUsed) {
         if (!confirm(`「${move.displayName}」は一部のコンボで使用されています。削除してもよろしいですか？`)) return;
     }
-    
+
     currentProfile.moves = currentProfile.moves.filter(m => m.id !== moveId);
 
-    // コンボ内の技も削除
-    comboTokens = comboTokens.filter(token => {
-        if (token.type === 'move' && token.id === moveId) {
-            return false;
+    // 現在編集中のコンボから削除
+    comboTokens = comboTokens.filter(t => !(t.type === 'move' && t.id === moveId));
+
+    // コンボライブラリ内の全コンボからも削除
+    currentProfile.combos.forEach(combo => {
+        if (combo.tokens) {
+            combo.tokens = combo.tokens.filter(t => !(t.type === 'move' && t.id === moveId));
+            combo.displayString = generateDisplayString(combo.tokens, null, false);
         }
-        return true;
     });
 
     saveProfiles();
     renderMoveButtons();
+    renderComboLibrary();
     updateComboDisplay();
     showNotification('技を削除しました', 'success');
 }
@@ -728,7 +732,7 @@ function updateModifierType(id, symbol, label, position) {
     if (!modifier) return;
 
     // 既存のコンボに影響があるかチェック（tokens が未定義・非配列のデータを安全にスキップ）
-    const affectedCombos = currentProfile.combos.filter(c => 
+    const affectedCombos = currentProfile.combos.filter(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'modifier' && t.kind === id)
     );
 
@@ -766,7 +770,7 @@ function deleteModifierType(id) {
     if (!mod) return;
 
     // 既存のコンボで使用されているかチェック
-    const isUsed = currentProfile.combos.some(c => 
+    const isUsed = currentProfile.combos.some(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'modifier' && t.kind === id)
     );
 
@@ -776,8 +780,22 @@ function deleteModifierType(id) {
     }
 
     currentProfile.modifiers = currentProfile.modifiers.filter(m => m.id !== id);
+    
+    // 現在のコンボから削除
+    comboTokens = comboTokens.filter(t => !(t.type === 'modifier' && t.kind === id));
+    
+    // コンボライブラリ内からも削除
+    currentProfile.combos.forEach(combo => {
+        if (combo.tokens) {
+            combo.tokens = combo.tokens.filter(t => !(t.type === 'modifier' && t.kind === id));
+            combo.displayString = generateDisplayString(combo.tokens, null, false);
+        }
+    });
+
     saveProfiles();
     renderModifierButtons();
+    renderComboLibrary();
+    updateComboDisplay();
     showNotification('修飾子を削除しました', 'success');
 }
 
@@ -803,7 +821,7 @@ function updateLinkType(id, symbol, label) {
     if (!linkType) return;
 
     // 既存のコンボに影響があるかチェック（tokens が未定義・非配列のデータを安全にスキップ）
-    const affectedCombos = currentProfile.combos.filter(c => 
+    const affectedCombos = currentProfile.combos.filter(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'link' && t.kind === id)
     );
 
@@ -840,7 +858,7 @@ function deleteLinkType(id) {
     if (!link) return;
 
     // 既存のコンボで使用されているかチェック
-    const isUsed = currentProfile.combos.some(c => 
+    const isUsed = currentProfile.combos.some(c =>
         c.tokens && Array.isArray(c.tokens) && c.tokens.some(t => t && t.type === 'link' && t.kind === id)
     );
 
@@ -850,8 +868,22 @@ function deleteLinkType(id) {
     }
 
     currentProfile.linkTypes = currentProfile.linkTypes.filter(l => l.id !== id);
+    
+    // 現在のコンボから削除
+    comboTokens = comboTokens.filter(t => !(t.type === 'link' && t.kind === id));
+    
+    // コンボライブラリ内からも削除
+    currentProfile.combos.forEach(combo => {
+        if (combo.tokens) {
+            combo.tokens = combo.tokens.filter(t => !(t.type === 'link' && t.kind === id));
+            combo.displayString = generateDisplayString(combo.tokens, null, false);
+        }
+    });
+
     saveProfiles();
     renderLinkButtons();
+    renderComboLibrary();
+    updateComboDisplay();
     showNotification('接続タイプを削除しました', 'success');
 }
 
@@ -877,7 +909,7 @@ function renderMoveButtons() {
     normalMovesContainer.innerHTML = normalMoves.map(createMoveButton).join('');
     specialMovesContainer.innerHTML = specialMoves.map(createMoveButton).join('');
     superMovesContainer.innerHTML = superMoves.map(createMoveButton).join('');
-    
+
     if (jumpMovesContainer) {
         jumpMovesContainer.innerHTML = jumpMoves.map(createMoveButton).join('');
     }
@@ -958,7 +990,7 @@ function renderMoveButtons() {
         el.addEventListener('drop', (e) => {
             e.preventDefault();
             el.classList.remove('drag-over-container');
-            
+
             const fromId = e.dataTransfer.getData('text/move-id');
             // コンテナ自体の空きスペースに落ちた場合のみ処理
             if (fromId && e.target.id === item.id) {
@@ -1001,7 +1033,7 @@ function reorderMoves(fromId, toId, toCat) {
     if (fromIdx === -1) return;
 
     const item = currentProfile.moves[fromIdx];
-    
+
     // カテゴリを更新
     if (toCat) {
         item.category = toCat;
@@ -1254,7 +1286,7 @@ function addMoveToken(moveId) {
     // 2つ目以降の技の場合、リンクを自動挿入
     if (comboTokens.length > 0) {
         const lastToken = comboTokens[comboTokens.length - 1];
-        
+
         // 直前が修飾子の場合、その位置を確認
         let isPrefixModifier = false;
         if (lastToken.type === 'modifier') {
@@ -1385,7 +1417,7 @@ function insertMoveAt(index, moveId) {
 
     if (index > 0) {
         const prevToken = comboTokens[index - 1];
-        
+
         // 直前が修飾子の場合、その位置を確認
         let isPrefixModifier = false;
         if (prevToken.type === 'modifier') {
@@ -1447,14 +1479,14 @@ function clearCombo() {
         comboTokens = [];
         loadedComboId = null;
         insertPosition = null;
-        
+
         const nameInput = document.getElementById('currentComboName');
         if (nameInput) {
             nameInput.value = '';
             document.getElementById('currentComboDamage').value = '';
             document.getElementById('currentComboNotes').value = '';
         }
-        
+
         const tagsInput = document.getElementById('currentComboTags');
         if (tagsInput) tagsInput.value = '';
 
@@ -1730,11 +1762,11 @@ function updateComboDisplay() {
     let tokensHtml = comboTokens.map((token, index) => {
         return createTokenElement(token, index);
     }).join('');
-    
+
     // 末尾の挿入ボタンを追加
     const activeClass = (insertPosition === comboTokens.length) ? 'active' : '';
     tokensHtml += `<button class="token-insert ${activeClass}" data-index="${comboTokens.length}" title="末尾に挿入">+</button>`;
-    
+
     tokensElement.innerHTML = tokensHtml;
 
     // 各トークン内の挿入ボタンのアクティブ状態を設定
@@ -1954,24 +1986,24 @@ function loadComboFromLibrary(comboId) {
 
     comboTokens = JSON.parse(JSON.stringify(combo.tokens));
     loadedComboId = comboId;
-    
+
     const nameInput = document.getElementById('currentComboName');
     if (nameInput) {
         nameInput.value = combo.name || '';
         document.getElementById('currentComboDamage').value = combo.damage || '';
         document.getElementById('currentComboNotes').value = combo.notes || '';
-        
+
         // タグの読み込み
         currentComboTags = combo.tags ? [...combo.tags] : [];
         renderCurrentTags();
-        
+
         // リソースデータの復元
         if (currentProfile.resourceDefinitions) {
             currentProfile.resourceDefinitions.forEach(def => {
                 const consumedInput = document.getElementById(`res_${def.id}_consumed`);
                 const gainedInput = document.getElementById(`res_${def.id}_gained`);
                 const requiredInput = document.getElementById(`res_${def.id}_required`);
-                
+
                 if (consumedInput) consumedInput.value = '';
                 if (gainedInput) gainedInput.value = '';
                 if (requiredInput) requiredInput.value = '';
@@ -2040,8 +2072,8 @@ function renderComboLibrary(searchQuery = '') {
         combos = combos.filter(combo => {
             const currentDisplayString = generateDisplayString(combo.tokens, null, false);
             return combo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                   currentDisplayString.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                   combo.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+                currentDisplayString.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                combo.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
         });
     }
 
@@ -2093,14 +2125,14 @@ function renderComboLibrary(searchQuery = '') {
                 .map(def => {
                     const data = combo.resources[def.id];
                     if (!data || (data.consumed === 0 && data.gained === 0 && data.required === 0)) return '';
-                    
+
                     let details = [];
                     if (data.consumed !== 0) details.push(`<span>${data.consumed}</span>`);
                     if (data.gained !== 0) details.push(`<span style="color: var(--color-success)">+${data.gained}</span>`);
                     if (data.required !== 0) details.push(`<span style="color: var(--color-warning)">req:${data.required}</span>`);
-                    
+
                     if (details.length === 0) return '';
-                    
+
                     return `
                         <div class="library-resource-badge" style="border-left-color: ${escapeHTML(def.color || '#00d4ff')}">
                             <span style="font-weight: bold; opacity: 0.8;">${escapeHTML(def.name)}:</span>
@@ -2110,7 +2142,7 @@ function renderComboLibrary(searchQuery = '') {
                 })
                 .filter(html => html !== '')
                 .join('');
-            
+
             if (resEntries) {
                 resourceHtml = `<div class="combo-item-resources">${resEntries}</div>`;
             }
@@ -2135,10 +2167,10 @@ function renderComboLibrary(searchQuery = '') {
             <div class="combo-item-string">${safeDisplayString}</div>
                 <div class="combo-item-tags">
                     ${combo.tags.map(tag => {
-                        const isStarter = tag.includes('始動');
-                        const className = isStarter ? 'combo-tag library-tag tag-starter' : 'combo-tag library-tag';
-                        return `<span class="${className}" draggable="true" data-tag="${escapeHTML(tag)}">${escapeHTML(tag)}</span>`;
-                    }).join('')}
+            const isStarter = tag.includes('始動');
+            const className = isStarter ? 'combo-tag library-tag tag-starter' : 'combo-tag library-tag';
+            return `<span class="${className}" draggable="true" data-tag="${escapeHTML(tag)}">${escapeHTML(tag)}</span>`;
+        }).join('')}
                 </div>
             
             <!-- 拡大時に表示される詳細セクション -->
@@ -2273,11 +2305,11 @@ function showModal(title, bodyHTML, onConfirm) {
             ${bodyHTML}
         </div>
         <div class="modal-footer">
-            ${onConfirm 
-                ? `<button class="btn btn-secondary" id="modalCancelBtn">キャンセル</button>
+            ${onConfirm
+            ? `<button class="btn btn-secondary" id="modalCancelBtn">キャンセル</button>
                    <button class="btn btn-primary" id="modalConfirmBtn">確定</button>`
-                : `<button class="btn btn-secondary" id="modalCancelBtn">閉じる</button>`
-            }
+            : `<button class="btn btn-secondary" id="modalCancelBtn">閉じる</button>`
+        }
         </div>
     `;
 
@@ -2285,7 +2317,7 @@ function showModal(title, bodyHTML, onConfirm) {
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-    
+
     if (onConfirm) {
         document.getElementById('modalConfirmBtn').addEventListener('click', () => {
             if (onConfirm()) {
@@ -2443,7 +2475,7 @@ function showProfileModal(mode, profileId = null) {
     if (mode === 'create') {
         const inheritSelect = document.getElementById('inheritProfileSelect');
         const gameNameInput = document.getElementById('gameNameInput');
-        
+
         inheritSelect.addEventListener('change', () => {
             const baseId = inheritSelect.value;
             if (baseId) {
@@ -2559,7 +2591,7 @@ function showMoveModal(mode, moveId = null, category = 'normal') {
 
         // 重複チェック (コマンド/表記)
         const normNotation = normalizeString(notation);
-        const isDuplicate = currentProfile.moves.some(m => 
+        const isDuplicate = currentProfile.moves.some(m =>
             m.id !== moveId && normalizeString(m.notation) === normNotation
         );
         if (isDuplicate) {
@@ -2631,7 +2663,7 @@ function showBulkMoveModal(category) {
 
             if (displayName && notation) {
                 // 重複チェック (IDまたはコマンド)
-                const isDuplicate = currentProfile.moves.some(m => 
+                const isDuplicate = currentProfile.moves.some(m =>
                     m.id === notation || m.notation === notation
                 );
 
@@ -2699,7 +2731,7 @@ function showModifierModal(mode, modifierId = null) {
 
         // 重複チェック (ID/ラベル)
         const normLabel = normalizeString(label);
-        const isDuplicate = currentProfile.modifiers.some(m => 
+        const isDuplicate = currentProfile.modifiers.some(m =>
             m.id !== modifierId && normalizeString(m.label) === normLabel
         );
         if (isDuplicate) {
@@ -2762,7 +2794,7 @@ function showLinkModal(mode, linkId = null) {
 
         // 重複チェック (記号/ラベル)
         const normSymbol = normalizeString(symbol);
-        const isDuplicate = currentProfile.linkTypes.some(l => 
+        const isDuplicate = currentProfile.linkTypes.some(l =>
             l.id !== linkId && normalizeString(l.symbol) === normSymbol
         );
         if (isDuplicate) {
@@ -2821,14 +2853,14 @@ function showComboSaveModal() {
         }
 
         saveComboToLibrary(name, damage, tags, notes);
-        
+
         const nameInput = document.getElementById('currentComboName');
         if (nameInput) {
             nameInput.value = name;
             document.getElementById('currentComboDamage').value = damage;
             document.getElementById('currentComboNotes').value = notes;
         }
-        
+
         return true;
     });
 }
@@ -2879,7 +2911,7 @@ function showComboEditModal(comboId) {
 function normalizeString(s) {
     if (!s) return "";
     // 全角英数字記号を半角に変換
-    const halfWidth = s.replace(/[！-～]/g, function(tmp) {
+    const halfWidth = s.replace(/[！-～]/g, function (tmp) {
         return String.fromCharCode(tmp.charCodeAt(0) - 0xFEE0);
     });
     // 小文字に統一して空白を削除
@@ -2989,13 +3021,13 @@ async function updateFileNameDisplay() {
     const display = document.getElementById('currentFileNameDisplay');
     const lastUpdated = document.getElementById('lastUpdatedDisplay');
     const saveBtn = document.getElementById('saveFileBtn');
-    
+
     if (display) {
         if (currentFileHandle) {
             display.textContent = `📁 ${currentFileHandle.name}`;
             display.style.color = 'var(--color-accent-secondary)';
             if (saveBtn) saveBtn.style.display = 'inline-flex';
-            
+
             // 最終更新日時の表示
             if (lastUpdated) {
                 try {
@@ -3024,7 +3056,7 @@ function loadDataFromString(jsonString) {
     }
     profiles = data.profiles;
     saveProfiles();
-    
+
     if (profiles.length > 0) {
         switchProfile(profiles[0].id);
     } else {
@@ -3042,15 +3074,15 @@ async function openFile() {
             return;
         }
         const [fileHandle] = await window.showOpenFilePicker({
-            types: [{ description: 'JSON Files', accept: {'application/json': ['.json']} }]
+            types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
         });
-        
+
         if (!confirm('現在のデータはすべて上書きされます。よろしいですか？')) return;
 
         const file = await fileHandle.getFile();
         const text = await file.text();
         loadDataFromString(text);
-        
+
         currentFileHandle = fileHandle;
         await storeFileHandle(fileHandle);
         updateFileNameDisplay();
@@ -3068,16 +3100,16 @@ async function saveFile() {
         if (!currentFileHandle) {
             return saveAsFile();
         }
-        
+
         if (!await verifyPermission(currentFileHandle, true)) {
             showNotification('ファイルへの書き込み権限がありません', 'error');
             return;
         }
-        
+
         const writable = await currentFileHandle.createWritable();
         await writable.write(getDataString());
         await writable.close();
-        
+
         updateFileNameDisplay();
         showNotification('上書き保存しました', 'success');
     } catch (e) {
@@ -3092,7 +3124,7 @@ async function saveAsFile() {
             showNotification('お使いのブラウザはファイルアクセスに対応していません', 'error');
             return;
         }
-        
+
         const now = new Date();
         const timestamp = now.getFullYear() +
             String(now.getMonth() + 1).padStart(2, '0') +
@@ -3103,9 +3135,9 @@ async function saveAsFile() {
 
         const fileHandle = await window.showSaveFilePicker({
             suggestedName: defaultName,
-            types: [{ description: 'JSON Files', accept: {'application/json': ['.json']} }]
+            types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
         });
-        
+
         const writable = await fileHandle.createWritable();
         await writable.write(getDataString());
         await writable.close();
@@ -3144,7 +3176,7 @@ function showHelpModal() {
     const bodyHTML = `
         <div style="font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--color-text-primary); max-height: 70vh; overflow-y: auto; padding-right: 10px;">
             <div style="background: rgba(0, 180, 216, 0.1); border-left: 4px solid var(--color-accent-secondary); padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 8px 8px 0;">
-                <p style="margin: 0; font-weight: 500;">格闘ゲームのコンボメモ作成を支援するためのツールです。コンボ構成を視覚的に組み立てることができ、テキスト出力や画像形式（コンボカード）での保存に対応しています。</p>
+                <p style="margin: 0; font-weight: 500;">格闘ゲームのコンボを視覚的に記録し、美しい「コンボカード」を作成するためのツールです。</p>
             </div>
 
             <section style="margin-bottom: 1.5rem;">
@@ -3152,9 +3184,9 @@ function showHelpModal() {
                     <span>🚀</span> 最初の3ステップ
                 </h4>
                 <ol style="padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem;">
-                    <li><strong>キャラクターを作る</strong>: 左上の「新規キャラクター」から作成します。</li>
-                    <li><strong>技を登録する</strong>: 技パネルの「➕」または「📄」から技を登録します。</li>
-                    <li><strong>コンボを組み立てる</strong>: 技ボタンを順番にクリックして作成します。</li>
+                    <li><strong>キャラクターを作る</strong>: 左上の「新規キャラクター」ボタンから作成します。</li>
+                    <li><strong>技を登録する</strong>: 技パネルの「➕」または「📄（一括登録）」から技を登録します。</li>
+                    <li><strong>コンボを組み立てる</strong>: 登録した技ボタンを順番にクリックしていく</li>
                 </ol>
             </section>
 
@@ -3169,7 +3201,7 @@ function showHelpModal() {
                     </li>
                     <li style="display: flex; gap: 10px;">
                         <span style="color: var(--color-accent-secondary);">●</span>
-                        <div><strong>画像保存</strong>: 現在のコンボをカード形式で画像出力。SNSへの共有などに利用できます。</div>
+                        <div><strong>画像保存</strong>: 現在のコンボを美しいレイアウトで画像出力。SNSへの共有に最適です。</div>
                     </li>
                     <li style="display: flex; gap: 10px;">
                         <span style="color: var(--color-accent-secondary);">●</span>
@@ -3245,7 +3277,7 @@ function getAllUniqueTags() {
         }
     });
     const uniqueTags = Array.from(tagsSet);
-    
+
     // カスタムオーダーがある場合はそれに従う
     if (currentProfile.customTagOrder && currentProfile.customTagOrder.length > 0) {
         return uniqueTags.sort((a, b) => {
@@ -3257,21 +3289,21 @@ function getAllUniqueTags() {
             return idxA - idxB;
         });
     }
-    
+
     return uniqueTags.sort();
 }
 
 function showTagManagerModal() {
     const tags = getAllUniqueTags();
     const title = 'タグの管理・編集';
-    
+
     let bodyHTML = `
         <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 4px;">
             タグ名を編集すると、そのタグを使用しているすべてのコンボに反映されます。
         </div>
         <div style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
     `;
-    
+
     if (tags.length === 0) {
         bodyHTML += '<p style="text-align: center; color: var(--color-text-muted); padding: 1rem;">タグがありません</p>';
     } else {
@@ -3288,7 +3320,7 @@ function showTagManagerModal() {
             `;
         }).join('');
     }
-    
+
     bodyHTML += '</div>';
 
     showModal(title, bodyHTML, null, true);
@@ -3320,18 +3352,18 @@ function showTagManagerModal() {
 
 function renameTagGlobal(oldName, newName) {
     if (!currentProfile || !newName || oldName === newName) return;
-    
+
     currentProfile.combos.forEach(combo => {
         if (combo.tags) {
             combo.tags = combo.tags.map(t => t === oldName ? newName : t);
         }
     });
-    
+
     if (selectedFilterTags.has(oldName)) {
         selectedFilterTags.delete(oldName);
         selectedFilterTags.add(newName);
     }
-    
+
     saveProfiles();
     renderTagUI();
     renderComboLibrary(document.getElementById('comboSearchInput').value);
@@ -3340,15 +3372,15 @@ function renameTagGlobal(oldName, newName) {
 
 function removeTagGlobal(tagName) {
     if (!currentProfile) return;
-    
+
     currentProfile.combos.forEach(combo => {
         if (combo.tags) {
             combo.tags = combo.tags.filter(t => t !== tagName);
         }
     });
-    
+
     selectedFilterTags.delete(tagName);
-    
+
     saveProfiles();
     renderTagUI();
     renderComboLibrary(document.getElementById('comboSearchInput').value);
@@ -3386,17 +3418,17 @@ function renderTagUI() {
                     <div class="tag-filter-group">
                         <div class="tag-filter-group-label" style="color: ${groupColor};">${label}</div>
                         ${groupTags.map((tag, idx) => {
-                            const safeTag = escapeHTML(tag);
-                            const checked = selectedFilterTags.has(tag) ? 'checked' : '';
-                            const id = `tagcb_${groupKey}_${idx}`;
-                            const tagClass = isStarterGroup ? 'combo-tag tag-starter' : 'combo-tag';
-                            return `
+                    const safeTag = escapeHTML(tag);
+                    const checked = selectedFilterTags.has(tag) ? 'checked' : '';
+                    const id = `tagcb_${groupKey}_${idx}`;
+                    const tagClass = isStarterGroup ? 'combo-tag tag-starter' : 'combo-tag';
+                    return `
                                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; color: var(--color-text-primary); padding: 2px 0;" for="${id}">
                                     <input type="checkbox" id="${id}" data-tag="${safeTag}" ${checked} style="cursor: pointer; accent-color: ${groupColor};">
                                     <span class="${tagClass}" draggable="true" style="padding: 1px 6px; font-size: 0.78rem;">${safeTag}</span>
                                 </label>
                             `;
-                        }).join('')}
+                }).join('')}
                     </div>
                 `;
             };
@@ -3404,7 +3436,7 @@ function renderTagUI() {
             filterContainer.innerHTML = buildGroupHtml(starters, '始動', 'starter') + buildGroupHtml(others, 'その他', 'other');
         }
     }
-    
+
     // 現在の絞り込み中タグの表示
     const activeFiltersDisplay = document.getElementById('activeFiltersDisplay');
     const activeFilterTagsList = document.getElementById('activeFilterTagsList');
@@ -3422,7 +3454,7 @@ function renderTagUI() {
                     </span>
                 `;
             }).join('');
-            
+
             // 削除ボタンのイベントリスナー
             activeFilterTagsList.querySelectorAll('.remove-filter-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -3435,7 +3467,7 @@ function renderTagUI() {
             activeFiltersDisplay.style.display = 'none';
         }
     }
-    
+
     updateClearAllTagsBtnVisibility();
 }
 
@@ -3471,7 +3503,7 @@ function updateLoadedCombo() {
     if (!currentProfile || !loadedComboId) return;
     const combo = currentProfile.combos.find(c => c.id === loadedComboId);
     if (!combo) return;
-    
+
     if (comboTokens.length === 0) {
         showNotification('コンボが空です', 'error');
         return;
@@ -3494,7 +3526,7 @@ function updateLoadedCombo() {
             <p>コンボ名が読み込み時（${escapeHTML(combo.name)}）から変更されています。</p>
             <p>どのように保存しますか？</p>
         `;
-        
+
         const overlay = document.getElementById('modalOverlay');
         const container = document.getElementById('modalContainer');
 
@@ -3519,7 +3551,7 @@ function updateLoadedCombo() {
 
         document.getElementById('modalCloseBtn').onclick = close;
         document.getElementById('modalCancelBtn').onclick = close;
-        
+
         document.getElementById('overwriteBtn').onclick = () => {
             performUpdate(combo, name, damage, tags, notes);
             close();
@@ -3547,7 +3579,7 @@ function performUpdate(combo, name, damage, tags, notes) {
     combo.displayString = generateDisplayString(comboTokens, null, false);
     combo.resources = getResourceDataFromUI();
     combo.updatedAt = new Date().toISOString();
-    
+
     saveProfiles();
     renderComboLibrary();
     renderTagUI();
@@ -3557,11 +3589,11 @@ function performUpdate(combo, name, damage, tags, notes) {
 function updateComboBtnVisibility() {
     const updateBtn = document.getElementById('updateComboBtn');
     const newBtn = document.getElementById('newComboBtn');
-    
+
     if (updateBtn) {
         updateBtn.style.display = loadedComboId ? 'inline-flex' : 'none';
     }
-    
+
     if (newBtn) {
         newBtn.style.display = loadedComboId ? 'inline-flex' : 'none';
     }
@@ -3583,7 +3615,7 @@ function exportSelectedCombosText() {
         exportText += `${combo.name}\n`;
         if (combo.damage > 0) exportText += `ダメージ: ${combo.damage}\n`;
         if (combo.tags && combo.tags.length > 0) exportText += `タグ: ${combo.tags.join(', ')}\n`;
-        
+
         // ゲージ（リソース）情報の追加
         if (combo.resources && currentProfile.resourceDefinitions) {
             const resourceParts = [];
@@ -3594,7 +3626,7 @@ function exportSelectedCombosText() {
                     if (resData.consumed) details.push(`消費${resData.consumed}`);
                     if (def.showRequired && resData.required) details.push(`必要${resData.required}`);
                     if (def.showGain && resData.gained) details.push(`獲得${resData.gained}`);
-                    
+
                     if (details.length > 0) {
                         resourceParts.push(`${def.name}[${details.join('/')}]`);
                     }
@@ -3613,7 +3645,7 @@ function exportSelectedCombosText() {
         navigator.clipboard.writeText(exportText).then(() => {
             showNotification(`${selectedCombos.length}件のコンボをコピーしました`, 'success');
             const selectAll = document.getElementById('selectAllCombos');
-            if(selectAll) selectAll.checked = false;
+            if (selectAll) selectAll.checked = false;
             document.querySelectorAll('.combo-select-cb').forEach(cb => cb.checked = false);
         }).catch(() => showFallbackExportModal(exportText));
     } else {
@@ -3641,7 +3673,7 @@ function deleteSelectedCombos() {
     }
 
     currentProfile.combos = currentProfile.combos.filter(c => !selectedIds.includes(c.id));
-    
+
     // 全選択チェックボックスを外す
     const selectAllCheckbox = document.getElementById('selectAllCombos');
     if (selectAllCheckbox) selectAllCheckbox.checked = false;
@@ -3663,20 +3695,20 @@ function exportComboAsImage() {
 
     const template = document.createElement('div');
     template.id = 'exportTemplate';
-    
+
     const comboName = document.getElementById('currentComboName').value.trim() || 'Untitled Combo';
     const damage = document.getElementById('currentComboDamage').value.trim() || '0';
-    const tags = document.getElementById('currentComboTags') ? document.getElementById('currentComboTags').value.trim().split(',').filter(t => t) : [];
+    const tags = currentComboTags;
     // リソース情報の生成
     const resourceData = getResourceDataFromUI();
     const resourcesHtml = (currentProfile.resourceDefinitions || []).map(def => {
         const data = resourceData[def.id] || {};
         // 全て0なら表示しない
         if (!data.consumed && !data.gained && !data.required) return '';
-        
+
         let details = [];
         const labelStyle = 'font-size: 0.65rem; color: var(--color-text-muted); margin-right: 4px; font-weight: normal;';
-        
+
         if (data.consumed) details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">使用量</span><span>${data.consumed}</span></div>`);
         if (def.showGain && data.gained) {
             details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">獲得量</span><span style="color:var(--color-success)">${data.gained}</span></div>`);
@@ -3684,7 +3716,7 @@ function exportComboAsImage() {
         if (def.showRequired && data.required) {
             details.push(`<div style="display:flex; align-items:baseline; gap:2px;"><span style="${labelStyle}">必要量</span><span style="color:var(--color-accent-secondary)">${data.required}</span></div>`);
         }
-        
+
         if (details.length === 0) return '';
 
         return `
@@ -3698,7 +3730,7 @@ function exportComboAsImage() {
     // ビジュアルウィンドウのスタイルを動的に取得（将来的な色変更への連動対応）
     const visualWindow = document.querySelector('.combo-display');
     const visualStyles = window.getComputedStyle(visualWindow);
-    
+
     // コンボレシピをビジュアル表示形式にする (HTMLエスケープあり)
     const displayString = generateDisplayString(comboTokens, null, true);
     const comboRecipeHtml = `
@@ -3765,7 +3797,7 @@ function exportComboAsImage() {
     document.body.appendChild(template);
 
     showNotification('画像を生成中...', 'info');
-    
+
     const images = template.querySelectorAll('img');
     const promises = Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
@@ -3859,7 +3891,7 @@ function setupTagDragAndDrop() {
         draggedTag = target.dataset.tag;
         draggedIndex = parseInt(target.dataset.index);
         dragSource = target.dataset.source || (target.closest('#existingTagsContainer') ? 'pool' : 'sidebar');
-        
+
         e.dataTransfer.setData('application/x-combo-tag', draggedTag);
         e.dataTransfer.effectAllowed = 'move';
         target.classList.add('dragging');
@@ -3883,10 +3915,10 @@ function setupTagDragAndDrop() {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
-        
+
         const tag = e.dataTransfer.getData('application/x-combo-tag');
         if (!tag) return;
-        
+
         const targetTag = e.target.closest('[data-source="current"]');
         const targetIndex = targetTag ? parseInt(targetTag.dataset.index) : currentComboTags.length;
 
@@ -3915,23 +3947,23 @@ function setupTagDragAndDrop() {
     poolZone.addEventListener('drop', (e) => {
         e.preventDefault();
         if (!currentProfile) return;
-        
+
         const tag = e.dataTransfer.getData('application/x-combo-tag');
         if (!tag) return;
 
         const targetTagBtn = e.target.closest('button.combo-tag');
         if (!targetTagBtn) return;
-        
+
         const targetTagValue = targetTagBtn.dataset.tag;
         const allTags = getAllUniqueTags();
-        
+
         if (!currentProfile.customTagOrder) {
             currentProfile.customTagOrder = [...allTags];
         }
-        
+
         const oldIndex = currentProfile.customTagOrder.indexOf(draggedTag);
         const targetIndex = currentProfile.customTagOrder.indexOf(targetTagValue);
-        
+
         if (oldIndex !== -1 && targetIndex !== -1 && oldIndex !== targetIndex) {
             const element = currentProfile.customTagOrder.splice(oldIndex, 1)[0];
             currentProfile.customTagOrder.splice(targetIndex, 0, element);
