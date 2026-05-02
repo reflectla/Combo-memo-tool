@@ -339,17 +339,17 @@ function setupEventListeners() {
     document.getElementById('moveDisplayToggle').addEventListener('change', (e) => {
         moveDisplayMode = e.target.value;
         updateComboDisplay();
-        renderComboLibrary(); // ライブラリも更新する必要がある
+        renderComboLibraryWithCurrentSearch(); // ライブラリも更新する必要がある
     });
     document.getElementById('modifierDisplayToggle').addEventListener('change', (e) => {
         modifierDisplayMode = e.target.value;
         updateComboDisplay();
-        renderComboLibrary();
+        renderComboLibraryWithCurrentSearch();
     });
     document.getElementById('linkDisplayToggle').addEventListener('change', (e) => {
         linkDisplayMode = e.target.value;
         updateComboDisplay();
-        renderComboLibrary();
+        renderComboLibraryWithCurrentSearch();
     });
 
     document.getElementById('toggleMoveEditModeBtn').addEventListener('click', () => {
@@ -547,7 +547,7 @@ function switchProfile(profileId, forceReset = true) {
     renderMoveButtons();
     renderLinkButtons();
     renderModifierButtons();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     renderTagUI();
     renderResourceInputs();
     updateComboDisplay();
@@ -656,7 +656,7 @@ function updateMove(moveId, moveData) {
         saveProfiles();
         renderMoveButtons();
         updateComboDisplay();
-        renderComboLibrary();
+        renderComboLibraryWithCurrentSearch();
         showNotification('技を更新しました', 'success');
     };
 
@@ -700,7 +700,7 @@ function deleteMove(moveId) {
 
     saveProfiles();
     renderMoveButtons();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     updateComboDisplay();
     showNotification('技を削除しました', 'success');
 }
@@ -750,7 +750,7 @@ function updateModifierType(id, symbol, label, position) {
         saveProfiles();
         renderModifierButtons();
         updateComboDisplay();
-        renderComboLibrary();
+        renderComboLibraryWithCurrentSearch();
         showNotification('修飾子を更新しました', 'success');
     };
 
@@ -794,7 +794,7 @@ function deleteModifierType(id) {
 
     saveProfiles();
     renderModifierButtons();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     updateComboDisplay();
     showNotification('修飾子を削除しました', 'success');
 }
@@ -838,7 +838,7 @@ function updateLinkType(id, symbol, label) {
         saveProfiles();
         renderLinkButtons();
         updateComboDisplay();
-        renderComboLibrary();
+        renderComboLibraryWithCurrentSearch();
         showNotification('接続タイプを更新しました', 'success');
     };
 
@@ -882,7 +882,7 @@ function deleteLinkType(id) {
 
     saveProfiles();
     renderLinkButtons();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     updateComboDisplay();
     showNotification('接続タイプを削除しました', 'success');
 }
@@ -1970,7 +1970,7 @@ function saveComboToLibrary(name, damage, tags, notes) {
 
     currentProfile.combos.push(combo);
     saveProfiles();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     renderTagUI();
     renderResourceInputs();
     loadedComboId = combo.id;
@@ -2036,7 +2036,7 @@ function updateComboInLibrary(comboId, data) {
     combo.updatedAt = new Date().toISOString();
 
     saveProfiles();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     renderTagUI();
     showNotification('コンボを更新しました', 'success');
 }
@@ -2047,9 +2047,14 @@ function deleteComboFromLibrary(comboId) {
 
     currentProfile.combos = currentProfile.combos.filter(c => c.id !== comboId);
     saveProfiles();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     renderTagUI();
     showNotification('コンボを削除しました', 'success');
+}
+
+function renderComboLibraryWithCurrentSearch() {
+    const input = document.getElementById('comboSearchInput');
+    renderComboLibrary(input ? input.value : '');
 }
 
 function renderComboLibrary(searchQuery = '') {
@@ -2069,11 +2074,44 @@ function renderComboLibrary(searchQuery = '') {
 
     // 検索フィルター
     if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        // 英数字（アンダースコア、ハイフン含む）のみの場合は単語境界を考慮する
+        const isSimpleTerm = /^[a-zA-Z0-9_\-]+$/.test(q);
+
         combos = combos.filter(combo => {
-            const currentDisplayString = generateDisplayString(combo.tokens, null, false);
-            return combo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                currentDisplayString.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                combo.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+            // 1. 名前またはタグの部分一致
+            if (combo.name.toLowerCase().includes(q)) return true;
+            if (combo.tags && combo.tags.some(tag => tag.toLowerCase().includes(q))) return true;
+
+            // 2. トークン単位の完全一致チェック（例: "ch"でcholdがヒットするのを防ぐ）
+            const hasExactTokenMatch = combo.tokens.some(token => {
+                let props = [];
+                if (token.type === 'move') {
+                    const m = currentProfile.moves.find(mv => mv.id === token.id);
+                    if (m) props = [m.id, m.displayName, m.notation];
+                } else if (token.type === 'modifier') {
+                    const m = currentProfile.modifiers.find(mod => mod.id === token.kind);
+                    if (m) props = [m.id, m.label, m.symbol];
+                } else if (token.type === 'link') {
+                    const l = currentProfile.linkTypes.find(lk => lk.id === token.kind);
+                    if (l) props = [l.id, l.label, l.symbol];
+                }
+                return props.some(p => p && p.toLowerCase() === q);
+            });
+            if (hasExactTokenMatch) return true;
+
+            // 3. 表示文字列全体でのマッチ
+            const displayStr = generateDisplayString(combo.tokens, null, false).toLowerCase();
+            if (isSimpleTerm) {
+                // 英数字の場合、単語境界（前後が記号や空白）を考慮して部分一致の誤爆を防ぐ
+                const regex = new RegExp('(^|[^a-zA-Z0-9_\\-])' + q + '($|[^a-zA-Z0-9_\\-])', 'i');
+                if (regex.test(displayStr)) return true;
+            } else {
+                // 日本語や記号を含む場合は従来通り部分一致
+                if (displayStr.includes(q)) return true;
+            }
+
+            return false;
         });
     }
 
@@ -3581,7 +3619,7 @@ function performUpdate(combo, name, damage, tags, notes) {
     combo.updatedAt = new Date().toISOString();
 
     saveProfiles();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     renderTagUI();
     showNotification('コンボを上書き保存しました', 'success');
 }
@@ -3679,7 +3717,7 @@ function deleteSelectedCombos() {
     if (selectAllCheckbox) selectAllCheckbox.checked = false;
 
     saveProfiles();
-    renderComboLibrary();
+    renderComboLibraryWithCurrentSearch();
     showNotification(`${selectedIds.length} 件のコンボを削除しました`, 'success');
 }
 
